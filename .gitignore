@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.vscode/
+*.iml
+**/build/
+**/target/
+**/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+*.log
+.env
+.env.*
+!.env.example
