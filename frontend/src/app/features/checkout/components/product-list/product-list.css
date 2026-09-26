@@ -50,3 +50,18 @@ h3 {
   font-size: 0.875rem;
   font-weight: 400;
 }
+
+.product-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 35rem) {
+  .product-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+}

@@ -71,7 +71,9 @@ describe('CheckoutPage catalog', () => {
     http.expectOne('/api/products').error(new ProgressEvent('error'));
     fixture.detectChanges();
 
-    const retry = element.querySelector('button');
+    const retry = element.querySelector<HTMLButtonElement>(
+      'section[aria-labelledby="products-heading"] button',
+    );
     retry?.click();
     retry?.click();
 
@@ -101,13 +103,19 @@ describe('CheckoutPage catalog', () => {
       'Could not load products',
     );
     expect(element.textContent).not.toContain('private failure detail');
-    const retry = element.querySelector('button');
+    const retry = element.querySelector<HTMLButtonElement>(
+      'section[aria-labelledby="products-heading"] button',
+    );
     expect(retry?.textContent).toContain('Try again');
     retry?.click();
     fixture.detectChanges();
 
     expect(element.querySelector('[role="alert"]')).toBeNull();
-    expect(element.querySelector('button')).toBeNull();
+    expect(
+      element.querySelector<HTMLButtonElement>(
+        'section[aria-labelledby="products-heading"] button',
+      ),
+    ).toBeNull();
     expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading products');
     http.expectOne('/api/products').flush(catalog);
     fixture.detectChanges();
@@ -118,14 +126,19 @@ describe('CheckoutPage catalog', () => {
   it('allows another retry after a network failure', () => {
     http.expectOne('/api/products').error(new ProgressEvent('error'));
     fixture.detectChanges();
-    element.querySelector('button')?.click();
+    element
+      .querySelector<HTMLButtonElement>('section[aria-labelledby="products-heading"] button')
+      ?.click();
     http.expectOne('/api/products').error(new ProgressEvent('error'));
     fixture.detectChanges();
 
     expect(element.querySelector('[role="alert"]')?.textContent).toContain(
       'Could not load products',
     );
-    expect(element.querySelector('button')?.textContent).toContain('Try again');
+    expect(
+      element.querySelector<HTMLButtonElement>('section[aria-labelledby="products-heading"] button')
+        ?.textContent,
+    ).toContain('Try again');
   });
 
   it('cancels an in-flight catalog request when the page is destroyed', () => {

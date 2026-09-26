@@ -32,23 +32,15 @@ h2 {
   margin-top: 0;
 }
 
-button {
-  min-height: 2.75rem;
-  padding: 0.625rem 1rem;
-  border: 0;
-  border-radius: 0.25rem;
-  background: var(--color-green);
-  color: white;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 1fr);
+  align-items: start;
+  gap: 2.5rem;
 }
 
-button:hover {
-  text-decoration: underline;
-}
-
-button:focus-visible {
-  outline: 3px solid var(--color-ink);
-  outline-offset: 3px;
+@media (max-width: 55rem) {
+  .checkout-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

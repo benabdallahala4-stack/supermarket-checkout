@@ -1,0 +1,64 @@
+<section aria-labelledby="cart-heading">
+  <header>
+    <h2 id="cart-heading">Your cart</h2>
+    <button
+      class="text-button"
+      type="button"
+      [disabled]="items().length === 0"
+      (click)="clear.emit()"
+    >
+      Clear cart
+    </button>
+  </header>
+
+  <p id="cart-status" role="status">
+    {{ itemCount() }} {{ itemCount() === 1 ? 'item' : 'items' }} in cart
+  </p>
+
+  @if (items().length === 0) {
+    <p class="empty-cart">Your cart is empty. Add a product to get started.</p>
+  } @else {
+    <ul aria-label="Cart items" role="list">
+      @for (item of items(); track item.productId) {
+        <li>
+          <div class="item-heading">
+            <h3>{{ item.name }}</h3>
+            <button
+              class="text-button"
+              type="button"
+              [attr.aria-label]="'Remove ' + item.name + ' from cart'"
+              (click)="remove.emit(item.productId)"
+            >
+              Remove
+            </button>
+          </div>
+          <div class="quantity-controls">
+            <button
+              class="quantity-button"
+              type="button"
+              [attr.aria-label]="'Decrease ' + item.name + ' quantity'"
+              (click)="decrement.emit(item.productId)"
+            >
+              −
+            </button>
+            <output [attr.aria-label]="'Quantity of ' + item.name" aria-live="off">{{
+              item.quantity
+            }}</output>
+            <button
+              class="quantity-button"
+              type="button"
+              [attr.aria-label]="'Increase ' + item.name + ' quantity'"
+              [disabled]="item.quantity === maxQuantity"
+              (click)="increment.emit(item.productId)"
+            >
+              +
+            </button>
+          </div>
+          @if (item.quantity === maxQuantity) {
+            <p class="quantity-limit">Maximum quantity reached.</p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

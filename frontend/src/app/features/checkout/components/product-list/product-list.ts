@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Currency, Product } from '../../../../generated/api';
 
 @Component({
@@ -8,6 +8,9 @@ import { Currency, Product } from '../../../../generated/api';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductList {
+  readonly add = output<string>();
+
   readonly products = input.required<readonly Product[]>();
+  readonly limitProductIds = input<ReadonlySet<string>>(new Set());
   readonly currency = input.required<Currency>();
 }

@@ -7,10 +7,20 @@
           <p class="offer">{{ offer.quantity }} for {{ currency() }} {{ offer.price }}</p>
         }
       </div>
-      <p class="unit-price">
-        <span>{{ currency() }} {{ product.unitPrice }}</span>
-        <span class="unit-label">each</span>
-      </p>
+      <div class="product-actions">
+        <p class="unit-price">
+          <span>{{ currency() }} {{ product.unitPrice }}</span>
+          <span class="unit-label">each</span>
+        </p>
+        <button
+          type="button"
+          [attr.aria-label]="'Add ' + product.name + ' to cart'"
+          [disabled]="limitProductIds().has(product.id)"
+          (click)="add.emit(product.id)"
+        >
+          Add
+        </button>
+      </div>
     </li>
   }
 </ul>
