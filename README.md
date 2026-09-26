@@ -1,10 +1,10 @@
 # Supermarket Checkout
 
-A supermarket checkout that applies active quantity offers automatically. The backend owns pricing; the planned Angular interface submits product quantities and displays an itemized receipt.
+A supermarket checkout that applies active quantity offers automatically. The backend owns pricing; the Angular interface displays the catalog and active offers. Cart editing and receipt presentation are being added incrementally.
 
 ## Current milestone
 
-The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 application shell is available with generated API services, strict compilation, linting, formatting and Vitest. Product browsing, cart controls and receipt presentation are the next milestones.
+The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. Cart controls and receipt presentation are the next milestones.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ The workflow definition is verified locally. Its first hosted execution requires
 
 - `backend/`: Spring Boot application, Java tests and build configuration
 - `api/openapi.yaml`: source contract for catalog and checkout
-- `frontend/`: Angular application shell, strict configuration, tests, lint/format rules and generated services/models
+- `frontend/`: Angular catalog page and product-list component, strict configuration, tests, lint/format rules and generated services/models
 - `gradle/wrapper/`: pinned Gradle distribution and download checksum
 - `scripts/verify.sh`: shared local verification entry point
 - `docs/adr/`: architectural decisions
@@ -119,7 +119,7 @@ npm ci
 npm start
 ```
 
-Open `http://localhost:4200`. The current shell displays the application heading; product/cart/receipt interactions follow in later milestones. The development server proxies `/api/**` to `http://127.0.0.1:8080`. Generated services use the relative `/api` base path, so no wildcard CORS configuration or duplicated `/api/api` prefix is needed. The production output is in `frontend/dist/supermarket-checkout/browser`; production hosting would need equivalent API routing.
+Open `http://localhost:4200`. The catalog shows the configured products, exact unit prices and active quantity offers. Failed requests show a retry action; an empty catalog has an explicit message. Cart and receipt interactions follow in later milestones. The development server proxies `/api/**` to `http://127.0.0.1:8080`. Generated services use the relative `/api` base path, so no wildcard CORS configuration or duplicated `/api/api` prefix is needed. The production output is in `frontend/dist/supermarket-checkout/browser`; production hosting would need equivalent API routing.
 
 With the pinned Node runtime active, run from the repository root:
 
@@ -130,6 +130,6 @@ With the pinned Node runtime active, run from the repository root:
 
 Frontend verification performs a clean lockfile install, Prettier check, Angular/TypeScript/template lint, Vitest with coverage and a production build. The all mode requires backend, contract and frontend checks to succeed. Use `npm run format` from frontend/ to format handwritten files.
 
-Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. This scaffold reports shell coverage; the 80% handwritten checkout-feature line threshold will be activated when the feature is introduced. Production bundle budgets are already enforced.
+Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. Tests enforce an 80% line coverage floor over handwritten checkout-feature code and exercise catalog loading, offers, empty responses, errors, retry guards and request cancellation using the real generated service with Angular HTTP testing. Production bundle budgets are already enforced.
 
 The framework configuration follows the [Angular compatibility requirements](https://angular.dev/reference/versions) and the [CLI-supported Vitest coverage workflow](https://angular.dev/guide/testing/code-coverage).

@@ -1,15 +1,25 @@
-html {
-  font-family: system-ui, sans-serif;
-  color: #17212b;
+:root {
+  --color-ink: #172b26;
+  --color-muted: #51615b;
+  --color-green: #21613e;
+  --color-offer: #edf6ef;
+  --color-border: #d8e1db;
+  --color-surface: #f5f7f5;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  line-height: 1.5;
+  color: var(--color-ink);
   background: #fff;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
 }

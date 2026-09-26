@@ -1,0 +1,34 @@
+<section aria-labelledby="products-heading">
+  <header class="catalog-header">
+    <h2 id="products-heading">Products</h2>
+    <p>Browse unit prices and current quantity offers.</p>
+  </header>
+
+  @let current = state();
+  <p class="catalog-status" role="status">
+    @switch (current.status) {
+      @case ('loading') {
+        Loading products…
+      }
+      @case ('ready') {
+        @if (current.catalog.items.length === 0) {
+          No products available. Please check back later.
+        } @else {
+          {{ current.catalog.totalItems }}
+          {{ current.catalog.totalItems === 1 ? 'product' : 'products' }} available
+        }
+      }
+    }
+  </p>
+
+  @if (current.status === 'error') {
+    <div class="catalog-error">
+      <p role="alert">Could not load products. Please try again.</p>
+      <button type="button" (click)="retry()">Try again</button>
+    </div>
+  }
+
+  @if (current.status === 'ready' && current.catalog.items.length > 0) {
+    <app-product-list [products]="current.catalog.items" [currency]="current.catalog.currency" />
+  }
+</section>

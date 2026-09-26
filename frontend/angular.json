@@ -66,9 +66,12 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageInclude": ["src/app/**/*.ts"],
+            "coverageInclude": ["src/app/features/checkout/**/*.ts"],
             "coverageExclude": ["src/app/generated/**", "src/app/**/*.spec.ts"],
-            "coverageReporters": ["text", "html", "lcov", "json-summary"]
+            "coverageReporters": ["text", "html", "lcov", "json-summary"],
+            "coverageThresholds": {
+              "lines": 80
+            }
           }
         }
       }

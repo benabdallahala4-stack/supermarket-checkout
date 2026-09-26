@@ -10,4 +10,4 @@
 - Add behavior tests before behavior changes. Use Angular HTTP testing with real generated services for request/response integration.
 - Use the Node version in .nvmrc and the pinned npm version in package.json. npm ci is the reproducible installation command.
 - Run ./scripts/verify.sh frontend from the repository root. Handwritten ESLint/Prettier rules exclude generated files; TypeScript compilation still includes them.
-- Coverage reporting is enabled now. Add the planned 80% handwritten checkout-feature line threshold when feature behavior is introduced.
+- Maintain the 80% line coverage floor over handwritten checkout-feature code. Generated sources and test files remain outside coverage.
