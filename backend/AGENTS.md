@@ -9,3 +9,4 @@
 - Prefer real objects in domain tests and JUnit 5/AssertJ. Mock only meaningful external boundaries.
 - Run `./gradlew :backend:spotlessApply` to format Java and `./scripts/verify.sh backend` from the root to verify.
 - Spotless checks handwritten source under src; generated code will remain outside that target.
+- Use braces for conditional blocks and blank lines between validation, lookup, calculation and assignment steps. Keep related statements together.

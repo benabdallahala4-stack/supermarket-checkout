@@ -2,7 +2,7 @@
 
 Purpose: calculate supermarket checkout receipts with automatically applied quantity offers.
 
-Current implementation: Java 21 / Spring Boot bootstrap, OpenAPI contract, generated Spring interfaces/models and Angular client, contract-boundary tests, formatting, JAR build and backend/contract CI jobs. No pricing, HTTP business implementations or Angular application yet.
+Current implementation: Java 21 / Spring Boot bootstrap, OpenAPI contract, generated Spring interfaces/models and Angular client, contract-boundary tests, validated immutable catalog/cart domain, ArchUnit boundaries, JaCoCo coverage, formatting, JAR build and backend/contract CI jobs. No pricing, HTTP business implementations or Angular application yet.
 
 Target architecture: catalog and checkout features; immutable configured catalog; pure Java pricing; OpenAPI-generated REST interfaces/models and Angular client; MapStruct between REST and domain.
 
@@ -16,4 +16,4 @@ Run: `./gradlew :backend:bootRun`.
 
 CI: pull requests and pushes to main run backend and contract verification under Java 21. Hosted execution awaits repository publication. Angular compilation is deferred until its application exists.
 
-Next milestone: validated catalog and cart domain.
+Next milestone: receipt calculation with repeated quantity offers and duplicate-item aggregation.

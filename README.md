@@ -4,7 +4,7 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Checkout endpoint implementations, pricing rules and the Angular application are subsequent milestones.
+The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. Checkout endpoint implementations, pricing calculations and the Angular application are subsequent milestones.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ The application starts on port 8080. No product or checkout routes exist in this
 ./scripts/verify.sh backend
 ```
 
-This validates the contract, generates and compiles Spring types, checks Java formatting, runs startup and contract-boundary tests, and builds the executable JAR. The equivalent Gradle command is:
+This validates the contract, generates and compiles Spring types, checks Java formatting, runs startup, contract-boundary, domain and architecture tests, enforces 80% aggregate line coverage over handwritten catalog/checkout classes, and builds the executable JAR. The equivalent Gradle command is:
 
 ```sh
 ./gradlew --no-daemon :backend:check :backend:bootJar
@@ -54,7 +54,7 @@ After editing `api/openapi.yaml`, run `./gradlew :backend:generateFrontendApi` a
 
 ## Continuous integration
 
-The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to `main`. Separate backend and contract jobs install Temurin Java 21 on Ubuntu and cache Gradle dependencies. They call `./scripts/verify.sh backend` and `./scripts/verify.sh contract`, the same commands used locally. Formatting violations, failed tests, packaging failures or generated-client drift fail their respective jobs.
+The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to `main`. Separate backend and contract jobs install Temurin Java 21 on Ubuntu and cache Gradle dependencies. They call `./scripts/verify.sh backend` and `./scripts/verify.sh contract`, the same commands used locally. Formatting violations, failed tests, coverage below the floor, architecture violations, packaging failures or generated-client drift fail their respective jobs.
 
 Actions are pinned to commit revisions. The workflow has read-only repository permissions, does not retain checkout credentials, cancels superseded runs and has a 15-minute timeout. No secrets or deployment configuration are required.
 
@@ -70,3 +70,9 @@ The workflow definition is verified locally. Its first hosted execution requires
 - `docs/adr/`: architectural decisions
 
 See [application boundaries](docs/adr/001-application-boundaries.md), [root agent instructions](AGENTS.md) and [backend conventions](backend/AGENTS.md).
+
+## Domain verification
+
+`backend:check` requires JaCoCo coverage verification and emits HTML and XML reports under `backend/build/reports/jacoco/test/`. The 80% aggregate line floor covers all classes in the catalog and checkout features, including future adapters; generated types and the bootstrap class are outside that business scope.
+
+ArchUnit restricts domain dependencies to JDK/domain types and prevents catalog code from depending on checkout. Catalog tests cover exact cents, valid discounts, duplicate and unknown references, and immutable snapshots. Cart tests require a product ID and a positive integer quantity. See [monetary representation](docs/adr/003-monetary-representation.md).
