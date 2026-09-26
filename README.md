@@ -4,7 +4,7 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. The pure Java calculator applies repeated quantity offers, aggregates duplicate items and returns immutable itemized receipts. The active catalog is loaded and validated from YAML at startup. HTTP endpoints and the Angular application are subsequent milestones.
+The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular client is generated; the application UI is the next milestone.
 
 ## Prerequisites
 
@@ -22,7 +22,14 @@ From the repository root:
 ./gradlew :backend:bootRun
 ```
 
-The application starts on port 8080. No product or checkout routes exist in this milestone, so requests to `/` return 404.
+The application starts on port 8080:
+
+```sh
+curl http://localhost:8080/api/products
+curl -H 'Content-Type: application/json' -d '{"items":[{"productId":"APPLE","quantity":3}]}' http://localhost:8080/api/checkout
+```
+
+The checkout response contains subtotal `"0.90"`, discount `"0.15"` and total `"0.75"`. The root path `/` has no UI yet.
 
 ## Verify and package
 
@@ -30,7 +37,7 @@ The application starts on port 8080. No product or checkout routes exist in this
 ./scripts/verify.sh backend
 ```
 
-This validates the contract, generates and compiles Spring types, checks Java formatting, runs startup, contract-boundary, domain and architecture tests, enforces 80% aggregate line coverage over handwritten catalog/checkout classes, and builds the executable JAR. The equivalent Gradle command is:
+This validates the contract, generates and compiles Spring types, checks Java formatting, runs startup, contract, domain, configuration, application, mapper, HTTP and architecture tests, enforces 80% aggregate line coverage over handwritten catalog/checkout classes, and builds the executable JAR. The equivalent Gradle command is:
 
 ```sh
 ./gradlew --no-daemon :backend:check :backend:bootJar
@@ -73,7 +80,7 @@ See [application boundaries](docs/adr/001-application-boundaries.md), [root agen
 
 ## Domain verification
 
-`backend:check` requires JaCoCo coverage verification and emits HTML and XML reports under `backend/build/reports/jacoco/test/`. The 80% aggregate line floor covers all classes in the catalog and checkout features, including future adapters; generated types and the bootstrap class are outside that business scope.
+`backend:check` requires JaCoCo coverage verification and emits HTML and XML reports under `backend/build/reports/jacoco/test/`. The 80% aggregate line floor covers all classes in the catalog and checkout features, including future adapters; OpenAPI/MapStruct-generated types and the bootstrap class are outside that business scope.
 
 ArchUnit restricts domain dependencies to JDK/domain types and prevents catalog code from depending on checkout. Catalog tests cover exact cents, valid discounts, duplicate and unknown references, and immutable snapshots. Cart tests require a product ID and a positive integer quantity. See [monetary representation](docs/adr/003-monetary-representation.md).
 
@@ -97,4 +104,4 @@ java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.config.addition
 
 Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See [active catalog decision](docs/adr/004-active-catalog-configuration.md) and [scope assumptions](docs/assumptions.md).
 
-The catalog provider returns immutable views and looks up a set of IDs together. Missing IDs are omitted for checkout to reject, rather than producing partial successful receipts. HTTP endpoints are still pending.
+The catalog provider returns immutable views and looks up a set of IDs together. Missing IDs are omitted for checkout to reject, rather than producing partial successful receipts. The checkout service performs one batch lookup per request and rejects unknown products before pricing.

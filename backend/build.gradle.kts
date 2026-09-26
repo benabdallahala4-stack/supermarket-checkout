@@ -25,6 +25,8 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.mapstruct:mapstruct:1.6.3")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testImplementation("net.jqwik:jqwik:1.9.3")
@@ -154,6 +156,7 @@ jacoco {
 // Cover every handwritten class in both business features, including future adapters.
 val businessClasses = sourceSets.main.get().output.asFileTree.matching {
     include("com/example/supermarket/catalog/**", "com/example/supermarket/checkout/**")
+    exclude("**/*RestMapperImpl.class") // MapStruct-generated implementations, not handwritten code.
 }
 
 tasks.jacocoTestReport {
