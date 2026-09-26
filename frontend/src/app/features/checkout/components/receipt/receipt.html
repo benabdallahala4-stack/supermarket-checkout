@@ -1,0 +1,52 @@
+<section aria-labelledby="receipt-heading">
+  <h2 id="receipt-heading">Your receipt</h2>
+  @let result = receipt();
+
+  @if (result.items.length === 0) {
+    <p>No items in this receipt.</p>
+  } @else {
+    <ul aria-label="Receipt items" role="list">
+      @for (line of result.items; track line.productId) {
+        <li>
+          <h3>{{ line.name }}</h3>
+          <p class="quantity">{{ line.quantity }} × {{ result.currency }} {{ line.unitPrice }}</p>
+          @if (line.appliedOffer; as offer) {
+            <p class="applied-offer">
+              {{ offer.quantity }} for {{ result.currency }} {{ offer.price }} · applied
+              {{ offer.applications }} {{ offer.applications === 1 ? 'time' : 'times' }}
+            </p>
+          }
+          <dl [attr.aria-label]="line.name + ' amounts'">
+            <div>
+              <dt>Subtotal</dt>
+              <dd>{{ result.currency }} {{ line.subtotal }}</dd>
+            </div>
+            <div>
+              <dt>Savings</dt>
+              <dd>{{ result.currency }} {{ line.discount }}</dd>
+            </div>
+            <div class="line-total">
+              <dt>Line total</dt>
+              <dd>{{ result.currency }} {{ line.total }}</dd>
+            </div>
+          </dl>
+        </li>
+      }
+    </ul>
+  }
+
+  <dl class="totals" aria-label="Receipt totals">
+    <div>
+      <dt>Subtotal</dt>
+      <dd>{{ result.currency }} {{ result.subtotal }}</dd>
+    </div>
+    <div>
+      <dt>Savings</dt>
+      <dd>{{ result.currency }} {{ result.discount }}</dd>
+    </div>
+    <div class="grand-total">
+      <dt>Total</dt>
+      <dd>{{ result.currency }} {{ result.total }}</dd>
+    </div>
+  </dl>
+</section>

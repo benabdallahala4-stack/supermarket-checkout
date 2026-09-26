@@ -15,7 +15,7 @@
         <button
           type="button"
           [attr.aria-label]="'Add ' + product.name + ' to cart'"
-          [disabled]="limitProductIds().has(product.id)"
+          [disabled]="disabled() || limitProductIds().has(product.id)"
           (click)="add.emit(product.id)"
         >
           Add

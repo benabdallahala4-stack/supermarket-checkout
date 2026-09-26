@@ -14,6 +14,8 @@ export interface CartLine {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Cart {
+  readonly disabled = input(false);
+
   readonly items = input.required<readonly CartLine[]>();
   readonly itemCount = input.required<number>();
 

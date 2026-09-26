@@ -1,10 +1,10 @@
 # Supermarket Checkout
 
-A supermarket checkout that applies active quantity offers automatically. The backend owns pricing; the Angular interface displays the catalog and active offers and manages cart quantities. Server-calculated receipt presentation is the next milestone.
+A supermarket checkout that applies active quantity offers automatically. The backend owns pricing; the Angular interface displays the catalog and active offers and manages cart quantities. An explicit checkout action retrieves itemized receipts and savings from the backend.
 
 ## Current milestone
 
-The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. The cart supports adding products, changing quantities, removing products and clearing all items. Receipt calculation and presentation in the UI are the next milestone.
+The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. The cart supports adding products, changing quantities, removing products and clearing all items. Calculate checkout displays the server-calculated receipt, including applied offers and savings. Pending guards, error recovery and stale-response protection are covered by frontend tests.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ The workflow definition is verified locally. Its first hosted execution requires
 
 - `backend/`: Spring Boot application, Java tests and build configuration
 - `api/openapi.yaml`: source contract for catalog and checkout
-- `frontend/`: Angular checkout page, product-list/cart components, quantity state, strict configuration, tests, lint/format rules and generated services/models
+- `frontend/`: Angular checkout page, product-list/cart/receipt components, quantity state, strict configuration, tests, lint/format rules and generated services/models
 - `gradle/wrapper/`: pinned Gradle distribution and download checksum
 - `scripts/verify.sh`: shared local verification entry point
 - `docs/adr/`: architectural decisions
@@ -119,7 +119,7 @@ npm ci
 npm start
 ```
 
-Open `http://localhost:4200`. The catalog shows the configured products, exact unit prices and active quantity offers. Failed requests show a retry action; an empty catalog has an explicit message. Use Add and the cart quantity buttons to build a cart; decreasing the last unit removes that product. Remove deletes a whole line and Clear cart empties it. Quantities are bounded to positive int32 values, and Add/increase controls are disabled at the limit. Cart state belongs to the page and resets on reload; it stores no prices and makes no checkout request yet. The development server proxies `/api/**` to `http://127.0.0.1:8080`. Generated services use the relative `/api` base path, so no wildcard CORS configuration or duplicated `/api/api` prefix is needed. The production output is in `frontend/dist/supermarket-checkout/browser`; production hosting would need equivalent API routing.
+Open `http://localhost:4200`. The catalog shows the configured products, exact unit prices and active quantity offers. Failed requests show a retry action; an empty catalog has an explicit message. Use Add and the cart quantity buttons to build a cart; decreasing the last unit removes that product. Remove deletes a whole line and Clear cart empties it. Quantities are bounded to positive int32 values, and Add/increase controls are disabled at the limit. Cart state belongs to the page and resets on reload; it stores no prices. Select Calculate checkout to request a receipt, including for an empty cart. Cart edits and duplicate submissions are blocked while calculation is pending. An error preserves quantities and allows another calculation. Editing the cart afterward hides the previous receipt until you calculate again. The development server proxies `/api/**` to `http://127.0.0.1:8080`. Generated services use the relative `/api` base path, so no wildcard CORS configuration or duplicated `/api/api` prefix is needed. The production output is in `frontend/dist/supermarket-checkout/browser`; production hosting would need equivalent API routing.
 
 With the pinned Node runtime active, run from the repository root:
 
@@ -130,6 +130,6 @@ With the pinned Node runtime active, run from the repository root:
 
 Frontend verification performs a clean lockfile install, Prettier check, Angular/TypeScript/template lint, Vitest with coverage and a production build. The all mode requires backend, contract and frontend checks to succeed. Use `npm run format` from frontend/ to format handwritten files.
 
-Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. Tests enforce an 80% line coverage floor over handwritten checkout-feature code. They exercise catalog loading, offers, empty responses, errors, retry guards and request cancellation using the real generated service with Angular HTTP testing. Cart tests cover quantity controls, count/empty state, int32 bounds, immutable snapshots, page-scoped lifetime and sorted checkout request projection without money calculations. Production bundle budgets are already enforced.
+Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. Tests enforce an 80% line coverage floor over handwritten checkout-feature code. They exercise catalog loading, offers, empty responses, errors, retry guards and request cancellation using the real generated service with Angular HTTP testing. Cart tests cover quantity controls, count/empty state, int32 bounds, immutable snapshots, page-scoped lifetime and sorted checkout request projection without money calculations. Receipt tests verify exact server strings, empty checkout, pending guards, error recovery, invalidation, delayed/out-of-order responses and destruction cleanup. Responses are accepted only for the current request ID and immutable cart snapshot; the frontend never recalculates monetary amounts. Production bundle budgets are already enforced.
 
 The framework configuration follows the [Angular compatibility requirements](https://angular.dev/reference/versions) and the [CLI-supported Vitest coverage workflow](https://angular.dev/guide/testing/code-coverage).

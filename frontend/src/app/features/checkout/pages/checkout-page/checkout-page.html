@@ -34,17 +34,54 @@
         [products]="current.catalog.items"
         [currency]="current.catalog.currency"
         [limitProductIds]="limitProductIds()"
-        (add)="cart.increment($event)"
+        [disabled]="pending()"
+        (add)="increment($event)"
       />
     }
   </section>
 
-  <app-cart
-    [items]="cartLines()"
-    [itemCount]="cart.itemCount()"
-    (increment)="cart.increment($event)"
-    (decrement)="cart.decrement($event)"
-    (remove)="cart.remove($event)"
-    (clear)="cart.clear()"
-  />
+  <div class="checkout-summary">
+    <app-cart
+      [items]="cartLines()"
+      [itemCount]="cart.itemCount()"
+      [disabled]="pending()"
+      (increment)="increment($event)"
+      (decrement)="decrement($event)"
+      (remove)="remove($event)"
+      (clear)="clear()"
+    />
+
+    <div class="checkout-action">
+      <button
+        type="button"
+        [disabled]="pending() || state().status !== 'ready'"
+        (click)="calculate()"
+      >
+        Calculate checkout
+      </button>
+      @let result = checkout();
+      <p id="checkout-status" role="status">
+        @switch (result.status) {
+          @case ('pending') {
+            Calculating your receipt…
+          }
+          @case ('ready') {
+            Receipt calculated.
+          }
+          @case ('idle') {
+            Calculate checkout to see your total and savings.
+          }
+        }
+      </p>
+      @if (result.status === 'error') {
+        <p role="alert">
+          Could not calculate checkout. Your cart is unchanged. Select Calculate checkout to try
+          again.
+        </p>
+      }
+      @if (result.status === 'ready') {
+        <app-receipt [receipt]="result.receipt" />
+      }
+    </div>
+  </div>
 </div>

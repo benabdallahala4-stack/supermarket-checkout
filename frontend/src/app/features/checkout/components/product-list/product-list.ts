@@ -8,6 +8,8 @@ import { Currency, Product } from '../../../../generated/api';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductList {
+  readonly disabled = input(false);
+
   readonly add = output<string>();
 
   readonly products = input.required<readonly Product[]>();

@@ -44,3 +44,18 @@ h2 {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.checkout-summary {
+  min-width: 0;
+}
+.checkout-action {
+  margin-top: 1.5rem;
+}
+.checkout-action > button {
+  width: 100%;
+}
+#checkout-status {
+  min-height: 1.5em;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

@@ -4,7 +4,7 @@
     <button
       class="text-button"
       type="button"
-      [disabled]="items().length === 0"
+      [disabled]="disabled() || items().length === 0"
       (click)="clear.emit()"
     >
       Clear cart
@@ -27,6 +27,7 @@
               class="text-button"
               type="button"
               [attr.aria-label]="'Remove ' + item.name + ' from cart'"
+              [disabled]="disabled()"
               (click)="remove.emit(item.productId)"
             >
               Remove
@@ -37,6 +38,7 @@
               class="quantity-button"
               type="button"
               [attr.aria-label]="'Decrease ' + item.name + ' quantity'"
+              [disabled]="disabled()"
               (click)="decrement.emit(item.productId)"
             >
               −
@@ -48,7 +50,7 @@
               class="quantity-button"
               type="button"
               [attr.aria-label]="'Increase ' + item.name + ' quantity'"
-              [disabled]="item.quantity === maxQuantity"
+              [disabled]="disabled() || item.quantity === maxQuantity"
               (click)="increment.emit(item.productId)"
             >
               +
