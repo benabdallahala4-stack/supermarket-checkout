@@ -4,7 +4,7 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. The pure Java calculator applies repeated quantity offers, aggregates duplicate items and returns immutable itemized receipts. HTTP endpoints and the Angular application are subsequent milestones.
+The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. The pure Java calculator applies repeated quantity offers, aggregates duplicate items and returns immutable itemized receipts. The active catalog is loaded and validated from YAML at startup. HTTP endpoints and the Angular application are subsequent milestones.
 
 ## Prerequisites
 
@@ -81,6 +81,20 @@ ArchUnit restricts domain dependencies to JDK/domain types and prevents catalog 
 
 The calculator combines quantities for each product, rejects int32 overflow and unknown products, and returns lines sorted by product ID. Each offer applies to every complete bundle; remaining units use the regular price. An empty cart returns an empty receipt with exact zero totals. No unit-by-unit expansion is needed, including for the largest supported quantities.
 
-For an apple priced at EUR 0.30 with two for EUR 0.45, three apples cost EUR 0.75 and five cost EUR 1.20. With bananas at EUR 0.50 and three for EUR 1.20, three apples plus four bananas cost EUR 2.45. These are executable domain examples; active application configuration follows in the next milestone.
+For an apple priced at EUR 0.30 with two for EUR 0.45, three apples cost EUR 0.75 and five cost EUR 1.20. With bananas at EUR 0.50 and three for EUR 1.20, three apples plus four bananas cost EUR 2.45. These are executable domain examples and match the bundled active catalog.
 
 JUnit tests cover named examples, input errors, duplicate entries, immutable receipts, large quantities and concurrent calls. Three jqwik properties each generate 300 bounded catalog/cart cases for receipt arithmetic, order independence and split-entry equivalence. Gradle test reports retain jqwik's seed and minimized sample when a property fails; reproduce a failure by temporarily setting that property's `seed` to the reported value. Local `.jqwik-database` replay state is ignored.
+
+## Catalog configuration
+
+The bundled `backend/src/main/resources/application.yml` supplies three products and two active offers. Product and offer lists bind through Spring Boot; missing fields, duplicate IDs/offers, unknown references and invalid monetary or quantity values fail startup. Domain validation remains the source of semantic rules.
+
+To supply a different catalog, create an external YAML file with the same `checkout.catalog` structure, then start the packaged application with:
+
+```sh
+java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.config.additional-location=file:./config/catalog.yml
+```
+
+Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See [active catalog decision](docs/adr/004-active-catalog-configuration.md) and [scope assumptions](docs/assumptions.md).
+
+The catalog provider returns immutable views and looks up a set of IDs together. Missing IDs are omitted for checkout to reject, rather than producing partial successful receipts. HTTP endpoints are still pending.
