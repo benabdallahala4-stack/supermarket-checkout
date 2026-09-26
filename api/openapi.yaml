@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Supermarket Checkout API
+  version: 1.0.0
+  description: >-
+    Stateless pricing of whole-number product quantities using the active catalog.
+    Monetary amounts are exact EUR strings with two decimal places.
+servers:
+  - url: /api
+tags:
+  - name: Products
+    description: Available products and their active offers.
+  - name: Checkout
+    description: Calculate a receipt without creating an order or payment.
+paths:
+  /products:
+    get:
+      tags: [Products]
+      operationId: getProducts
+      summary: List the current catalog
+      description: All products are returned in product-ID order; pagination is not implemented.
+      responses:
+        '200':
+          description: Complete active catalog. totalItems equals the length of items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductCatalog'
+              example:
+                currency: EUR
+                items:
+                  - id: APPLE
+                    name: Apple
+                    unitPrice: '0.30'
+                    offer: {quantity: 2, price: '0.45'}
+                  - id: BANANA
+                    name: Banana
+                    unitPrice: '0.50'
+                    offer: {quantity: 3, price: '1.20'}
+                  - id: ORANGE
+                    name: Orange
+                    unitPrice: '0.80'
+                totalItems: 3
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /checkout:
+    post:
+      tags: [Checkout]
+      operationId: calculateCheckout
+      summary: Calculate an itemized receipt
+      description: >-
+        Duplicate product IDs are aggregated with checked int32 addition before pricing.
+        Unknown products or invalid items reject the entire request. Lines are sorted
+        by product ID. Empty carts are valid. Offers apply repeatedly with remaining
+        units charged at regular price. This operation persists no state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+            examples:
+              threeApples:
+                value: {items: [{productId: APPLE, quantity: 3}]}
+              empty:
+                value: {items: []}
+      responses:
+        '200':
+          description: Receipt calculated from one consistent active catalog snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutReceipt'
+              examples:
+                threeApples:
+                  value:
+                    currency: EUR
+                    items:
+                      - productId: APPLE
+                        name: Apple
+                        quantity: 3
+                        unitPrice: '0.30'
+                        subtotal: '0.90'
+                        discount: '0.15'
+                        total: '0.75'
+                        appliedOffer: {quantity: 2, price: '0.45', applications: 1}
+                    subtotal: '0.90'
+                    discount: '0.15'
+                    total: '0.75'
+                empty:
+                  value: {currency: EUR, items: [], subtotal: '0.00', discount: '0.00', total: '0.00'}
+        '400':
+          description: Invalid input, aggregate quantity overflow, or unknown product. No partial receipt.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              examples:
+                invalidQuantity:
+                  value:
+                    type: about:blank
+                    title: Invalid checkout request
+                    status: 400
+                    detail: One or more items are invalid.
+                    instance: /api/checkout
+                    code: INVALID_REQUEST
+                    errors: [{field: 'items[0].quantity', message: must be greater than zero}]
+                unknownProduct:
+                  value:
+                    type: about:blank
+                    title: Unknown product
+                    status: 400
+                    detail: The cart contains an unknown product.
+                    instance: /api/checkout
+                    code: UNKNOWN_PRODUCT
+        '415':
+          description: Request content type is not application/json.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              example:
+                type: about:blank
+                title: Unsupported media type
+                status: 415
+                detail: Use application/json.
+                instance: /api/checkout
+                code: INVALID_REQUEST
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  responses:
+    InternalError:
+      description: Unexpected server error; implementation details are not exposed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiProblem'
+          example:
+            type: about:blank
+            title: Internal server error
+            status: 500
+            detail: The request could not be completed.
+            instance: /api/checkout
+            code: INTERNAL_ERROR
+  schemas:
+    Money:
+      type: string
+      description: Nonnegative EUR amount in exact cents, never a JSON number.
+      pattern: '^[0-9]+\.[0-9]{2}$'
+      example: '0.45'
+    Currency:
+      type: string
+      enum: [EUR]
+    ProductId:
+      type: string
+      description: Case-sensitive identifier containing at least one non-whitespace character.
+      minLength: 1
+      pattern: '^[\s\S]*\S[\s\S]*$'
+      example: APPLE
+    ProductCatalog:
+      type: object
+      required: [currency, items, totalItems]
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        totalItems:
+          type: integer
+          format: int32
+          minimum: 0
+    Product:
+      type: object
+      required: [id, name, unitPrice]
+      properties:
+        id:
+          $ref: '#/components/schemas/ProductId'
+        name:
+          type: string
+          minLength: 1
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        offer:
+          $ref: '#/components/schemas/QuantityOffer'
+    QuantityOffer:
+      type: object
+      description: Single-product active offer; omitted from Product when unavailable.
+      required: [quantity, price]
+      properties:
+        quantity:
+          type: integer
+          format: int32
+          minimum: 2
+          maximum: 2147483647
+        price:
+          $ref: '#/components/schemas/Money'
+    CheckoutRequest:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Non-null entries; an empty array produces a zero receipt.
+          items:
+            $ref: '#/components/schemas/CheckoutItem'
+    CheckoutItem:
+      type: object
+      additionalProperties: false
+      required: [productId, quantity]
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+          description: Integer JSON token; quoted numbers and decimal tokens are rejected.
+    CheckoutReceipt:
+      type: object
+      required: [currency, items, subtotal, discount, total]
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceiptLine'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        discount:
+          $ref: '#/components/schemas/Money'
+        total:
+          $ref: '#/components/schemas/Money'
+    ReceiptLine:
+      type: object
+      required: [productId, name, quantity, unitPrice, subtotal, discount, total]
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        name:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        discount:
+          $ref: '#/components/schemas/Money'
+        total:
+          $ref: '#/components/schemas/Money'
+        appliedOffer:
+          $ref: '#/components/schemas/AppliedOffer'
+    AppliedOffer:
+      type: object
+      description: Omitted from ReceiptLine when no complete offer bundle was applied.
+      required: [quantity, price, applications]
+      properties:
+        quantity:
+          type: integer
+          format: int32
+          minimum: 2
+          maximum: 2147483647
+        price:
+          $ref: '#/components/schemas/Money'
+        applications:
+          type: integer
+          format: int32
+          minimum: 1
+    ApiProblem:
+      type: object
+      required: [type, title, status, detail, instance, code]
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          enum: [INVALID_REQUEST, UNKNOWN_PRODUCT, INTERNAL_ERROR]
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
