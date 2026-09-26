@@ -4,7 +4,7 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. Checkout endpoint implementations, pricing calculations and the Angular application are subsequent milestones.
+The Java 21 / Spring Boot foundation and OpenAPI contract generation are available. Spring API interfaces/models and an Angular client are generated from one specification. Validated immutable catalog and cart values are available, with architecture tests enforcing domain boundaries. The pure Java calculator applies repeated quantity offers, aggregates duplicate items and returns immutable itemized receipts. HTTP endpoints and the Angular application are subsequent milestones.
 
 ## Prerequisites
 
@@ -76,3 +76,11 @@ See [application boundaries](docs/adr/001-application-boundaries.md), [root agen
 `backend:check` requires JaCoCo coverage verification and emits HTML and XML reports under `backend/build/reports/jacoco/test/`. The 80% aggregate line floor covers all classes in the catalog and checkout features, including future adapters; generated types and the bootstrap class are outside that business scope.
 
 ArchUnit restricts domain dependencies to JDK/domain types and prevents catalog code from depending on checkout. Catalog tests cover exact cents, valid discounts, duplicate and unknown references, and immutable snapshots. Cart tests require a product ID and a positive integer quantity. See [monetary representation](docs/adr/003-monetary-representation.md).
+
+## Pricing behavior
+
+The calculator combines quantities for each product, rejects int32 overflow and unknown products, and returns lines sorted by product ID. Each offer applies to every complete bundle; remaining units use the regular price. An empty cart returns an empty receipt with exact zero totals. No unit-by-unit expansion is needed, including for the largest supported quantities.
+
+For an apple priced at EUR 0.30 with two for EUR 0.45, three apples cost EUR 0.75 and five cost EUR 1.20. With bananas at EUR 0.50 and three for EUR 1.20, three apples plus four bananas cost EUR 2.45. These are executable domain examples; active application configuration follows in the next milestone.
+
+JUnit tests cover named examples, input errors, duplicate entries, immutable receipts, large quantities and concurrent calls. Three jqwik properties each generate 300 bounded catalog/cart cases for receipt arithmetic, order independence and split-entry equivalence. Gradle test reports retain jqwik's seed and minimized sample when a property fails; reproduce a failure by temporarily setting that property's `seed` to the reported value. Local `.jqwik-database` replay state is ignored.

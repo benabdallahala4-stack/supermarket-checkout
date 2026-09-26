@@ -12,3 +12,6 @@ frontend/coverage/
 .env
 .env.*
 !.env.example
+
+# Local property-test replay state
+.jqwik-database
