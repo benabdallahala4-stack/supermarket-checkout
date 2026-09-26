@@ -2,7 +2,7 @@
 
 Purpose: calculate supermarket checkout receipts with automatically applied quantity offers.
 
-Current implementation: Java 21 / Spring Boot bootstrap, OpenAPI contract, generated Spring interfaces/models and Angular client, contract-boundary tests, validated immutable catalog/cart domain, ArchUnit boundaries, JaCoCo coverage, formatting, JAR build and backend/contract CI jobs. Stateless domain receipt calculation is implemented. The configured catalog provider loads validated YAML and returns immutable catalog subsets. MapStruct adapters, catalog/checkout HTTP endpoints and strict JSON/problem responses are implemented. No Angular application yet.
+Current implementation: Java 21 / Spring Boot bootstrap, OpenAPI contract, generated Spring interfaces/models and Angular client, contract-boundary tests, validated immutable catalog/cart domain, ArchUnit boundaries, JaCoCo coverage, formatting, JAR build and backend/contract CI jobs. Stateless domain receipt calculation is implemented. The configured catalog provider loads validated YAML and returns immutable catalog subsets. MapStruct adapters, catalog/checkout HTTP endpoints and strict JSON/problem responses are implemented. Angular 22.2 application shell, strict generated-client compilation, ESLint/Prettier, Vitest, development proxy and frontend CI are implemented. Product/cart/receipt UI behavior is pending.
 
 Target architecture: catalog and checkout features; immutable configured catalog; pure Java pricing; OpenAPI-generated REST interfaces/models and Angular client; MapStruct between REST and domain.
 
@@ -10,10 +10,10 @@ Scope: EUR, integer quantities, one active single-product offer, repeated bundle
 
 Invariants: BigDecimal money; duplicate items aggregate; input ordering does not affect the receipt; subtotal minus discount equals total; frontend displays backend prices.
 
-Verification: `./scripts/verify.sh backend` and `./scripts/verify.sh contract`.
+Verification: `./scripts/verify.sh all` (backend, contract and frontend), or each mode separately. Frontend requires Node 24.21.0 / npm 11.19.0; see frontend/.nvmrc.
 Regenerate Angular client: `./gradlew :backend:generateFrontendApi`. Never edit generated sources.
 Run: `./gradlew :backend:bootRun`.
 
-CI: pull requests and pushes to main run backend and contract verification under Java 21. Hosted execution awaits repository publication. Angular compilation is deferred until its application exists.
+CI: pull requests and pushes to main run backend, contract and frontend jobs under Java 21 and pinned Node. Hosted execution awaits repository publication.
 
-Next milestone: Angular application scaffold, compatible Node runtime, frontend checks and CI.
+Next milestone: display the catalog with loading/error/retry behavior and enable the checkout-feature coverage floor.

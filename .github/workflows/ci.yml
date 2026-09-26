@@ -54,3 +54,21 @@ jobs:
             gradle/wrapper/gradle-wrapper.properties
       - name: Validate contract and check generated client drift
         run: ./scripts/verify.sh contract
+
+  frontend:
+    name: Frontend verification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install, format-check, lint, test and build
+        run: ./scripts/verify.sh frontend

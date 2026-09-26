@@ -34,7 +34,7 @@ OpenAPI Generator 7.15.0 is pinned in the backend Gradle build and generates bot
 
 `checkFrontendApi` generates into a separate build directory, then compares full file lists and exact bytes. Missing, extra (including untracked) and changed files fail the check. It does not update the committed client. Backend compilation regenerates Spring types from the same specification.
 
-The base URL is `/api`, and operation paths are `/products` and `/checkout`. The generated Spring interfaces carry the base mapping; controllers do not add a second `/api`. Configure the Angular client's relative base path through its generated provider when the application is scaffolded.
+The base URL is `/api`, and operation paths are `/products` and `/checkout`. The generated Spring interfaces carry the base mapping; controllers do not add a second `/api`. The Angular application sets the relative base path through provideApi('/api') and uses a development proxy for /api/**.
 
 ## Mapping and application flow
 
@@ -48,4 +48,4 @@ MapStruct implementations are generated under the backend build directory and ar
 
 Backend verification covers configuration, pricing, batch coordination, real generated mapper beans, strict HTTP input, response serialization and safe failures. Tests use the Spring application with MockMvc; only the catalog provider is substituted for empty-catalog and internal-error scenarios. A packaged-JAR HTTP smoke test verifies the catalog and three-apple flow.
 
-Contract validation and generated-client reproducibility also pass locally. Angular compilation awaits the Angular 22 application scaffold; hosted CI awaits publication.
+Contract validation and generated-client reproducibility also pass locally. The Angular 22 scaffold compiles the generated client under strict TypeScript and tests real generated service URLs/payloads with Angular HTTP testing. Hosted CI awaits publication.

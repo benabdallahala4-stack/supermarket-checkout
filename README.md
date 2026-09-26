@@ -4,11 +4,12 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular client is generated; the application UI is the next milestone.
+The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 application shell is available with generated API services, strict compilation, linting, formatting and Vitest. Product browsing, cart controls and receipt presentation are the next milestones.
 
 ## Prerequisites
 
 - JDK 21, with `JAVA_HOME` pointing to it
+- Node 24.21.0 and its bundled npm 11.19.0, pinned in frontend/.nvmrc and frontend/package.json
 - Bash on Linux, macOS or WSL for the verification script
 - Internet access on the first build to download Gradle and dependencies
 
@@ -29,7 +30,7 @@ curl http://localhost:8080/api/products
 curl -H 'Content-Type: application/json' -d '{"items":[{"productId":"APPLE","quantity":3}]}' http://localhost:8080/api/checkout
 ```
 
-The checkout response contains subtotal `"0.90"`, discount `"0.15"` and total `"0.75"`. The root path `/` has no UI yet.
+The checkout response contains subtotal `"0.90"`, discount `"0.15"` and total `"0.75"`. The backend root path `/` has no UI; Angular is served separately during development.
 
 ## Verify and package
 
@@ -57,11 +58,11 @@ Check the generated Angular client separately:
 ./scripts/verify.sh contract
 ```
 
-After editing `api/openapi.yaml`, run `./gradlew :backend:generateFrontendApi` and review the generated diff. The check compares every generated client file without modifying it. See [API contract and generation](docs/api.md). Angular compilation will be verified when its application is scaffolded.
+After editing `api/openapi.yaml`, run `./gradlew :backend:generateFrontendApi` and review the generated diff. The check compares every generated client file without modifying it. See [API contract and generation](docs/api.md). The generated client is compiled with the application and exercised through Angular HTTP tests.
 
 ## Continuous integration
 
-The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to `main`. Separate backend and contract jobs install Temurin Java 21 on Ubuntu and cache Gradle dependencies. They call `./scripts/verify.sh backend` and `./scripts/verify.sh contract`, the same commands used locally. Formatting violations, failed tests, coverage below the floor, architecture violations, packaging failures or generated-client drift fail their respective jobs.
+The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to `main`. Separate backend, contract and frontend jobs use the same scripts as local verification. Java jobs use Temurin 21 and Gradle caching; the frontend job uses the pinned Node version and npm download caching. It runs npm ci, formatting, linting, tests with coverage, and the production build. Formatting violations, failed tests, coverage below an active threshold, architecture violations, compilation/bundle-budget failures or generated-client drift fail their respective jobs.
 
 Actions are pinned to commit revisions. The workflow has read-only repository permissions, does not retain checkout credentials, cancels superseded runs and has a 15-minute timeout. No secrets or deployment configuration are required.
 
@@ -71,7 +72,7 @@ The workflow definition is verified locally. Its first hosted execution requires
 
 - `backend/`: Spring Boot application, Java tests and build configuration
 - `api/openapi.yaml`: source contract for catalog and checkout
-- `frontend/src/app/generated/api/`: generated Angular services/models (no application yet)
+- `frontend/`: Angular application shell, strict configuration, tests, lint/format rules and generated services/models
 - `gradle/wrapper/`: pinned Gradle distribution and download checksum
 - `scripts/verify.sh`: shared local verification entry point
 - `docs/adr/`: architectural decisions
@@ -105,3 +106,30 @@ java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.config.addition
 Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See [active catalog decision](docs/adr/004-active-catalog-configuration.md) and [scope assumptions](docs/assumptions.md).
 
 The catalog provider returns immutable views and looks up a set of IDs together. Missing IDs are omitted for checkout to reject, rather than producing partial successful receipts. The checkout service performs one batch lookup per request and rejects unknown products before pricing.
+
+## Frontend development
+
+Use Node 24.21.0 with npm 11.19.0 for this project. If you use nvm, select the pinned runtime with `nvm install` and `nvm use` inside `frontend/`. Otherwise install that Node version with your preferred runtime manager. Do not rely on an older global Node installation; npm enforces the package engines.
+
+Keep the backend running in one terminal. In another terminal:
+
+```sh
+cd frontend
+npm ci
+npm start
+```
+
+Open `http://localhost:4200`. The current shell displays the application heading; product/cart/receipt interactions follow in later milestones. The development server proxies `/api/**` to `http://127.0.0.1:8080`. Generated services use the relative `/api` base path, so no wildcard CORS configuration or duplicated `/api/api` prefix is needed. The production output is in `frontend/dist/supermarket-checkout/browser`; production hosting would need equivalent API routing.
+
+With the pinned Node runtime active, run from the repository root:
+
+```sh
+./scripts/verify.sh frontend
+./scripts/verify.sh all
+```
+
+Frontend verification performs a clean lockfile install, Prettier check, Angular/TypeScript/template lint, Vitest with coverage and a production build. The all mode requires backend, contract and frontend checks to succeed. Use `npm run format` from frontend/ to format handwritten files.
+
+Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. This scaffold reports shell coverage; the 80% handwritten checkout-feature line threshold will be activated when the feature is introduced. Production bundle budgets are already enforced.
+
+The framework configuration follows the [Angular compatibility requirements](https://angular.dev/reference/versions) and the [CLI-supported Vitest coverage workflow](https://angular.dev/guide/testing/code-coverage).

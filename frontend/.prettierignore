@@ -1,0 +1,6 @@
+src/app/generated/
+package-lock.json
+node_modules/
+dist/
+coverage/
+.angular/
