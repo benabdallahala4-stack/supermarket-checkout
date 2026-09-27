@@ -13,6 +13,93 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 For a focused review, start with the [architecture guide](docs/architecture.md), the [API contract](api/openapi.yaml), and the [scope assumptions](docs/assumptions.md). The decisions behind the boundaries, contract, money representation and catalog storage are recorded in [the ADRs](docs/adr/).
 
+## System design and architecture
+
+The application is a modular monolith with a separately built Angular storefront. The Spring Boot backend owns catalog data and all monetary calculations. PostgreSQL is the default catalog store, while a Spring profile provides a validated YAML fallback for lightweight demonstrations.
+
+```mermaid
+flowchart LR
+    Customer["Customer"] --> Storefront["Angular storefront"]
+    Operator["Operator tool"]
+
+    Contract["api/openapi.yaml"] -.->|"generates"| Client["Angular API client"]
+
+    Storefront --> Client
+
+    subgraph Backend["Spring Boot backend"]
+        Controllers["Public REST API"]
+        Management["Catalog management API"]
+        Controllers --> CatalogService["Catalog application service"]
+        Controllers --> CheckoutService["Checkout application service"]
+        Management --> ManagementService["Catalog management service"]
+
+        CheckoutService --> Pricing["Pure Java pricing domain"]
+        CheckoutService --> CatalogPort["Catalog provider port"]
+        CatalogService --> CatalogPort
+        ManagementService --> EditorPort["Catalog editor port"]
+    end
+
+    Contract -.->|"generates interfaces and models"| Controllers
+    Client -->|"JSON / HTTP"| Controllers
+    Operator -->|"Token + ETag / If-Match"| Management
+    CatalogPort --> PostgreSQL[("PostgreSQL")]
+    EditorPort --> PostgreSQL
+    CatalogPort -.->|"config-catalog profile"| YAML["Validated YAML snapshot"]
+```
+
+### Architectural boundaries
+
+```text
+API adapters          Persistence/configuration adapters
+        \                    /
+         ▼                  ▼
+         Application services and ports
+                       │
+                       ▼
+                Pure Java domain
+```
+
+- **Domain:** products, offers, carts, exact monetary values, pricing rules and receipts. It has no Spring or generated REST dependencies.
+- **Application:** coordinates catalog reads, checkout calculation and atomic catalog replacement through ports.
+- **API:** implements the generated Spring interfaces and uses MapStruct for structural REST/domain conversion.
+- **Persistence:** implements catalog ports with JDBC, PostgreSQL and Flyway.
+- **Frontend:** stores product IDs and quantities; prices and receipt totals always come from the backend.
+
+ArchUnit tests enforce the main dependency rules.
+
+### Main request flows
+
+| Flow | Processing | Consistency guarantee |
+| --- | --- | --- |
+| Load catalog | Angular → generated client → catalog service → PostgreSQL | Products, offers and revision come from one database snapshot |
+| Calculate checkout | Cart IDs and quantities → catalog lookup → pricing domain → receipt | The receipt includes the catalog revision used for pricing |
+| Replace catalog | Operator GET → ETag → PUT with `If-Match` → atomic database replacement | Missing preconditions return `428`; stale updates return `412` |
+| YAML fallback | Backend starts with `config-catalog` profile → validated immutable snapshot | Configuration changes take effect after restart |
+
+### Checkout flow
+
+1. The storefront loads products and an opaque catalog revision.
+2. The cart retains only product IDs and integer quantities.
+3. `POST /api/checkout` maps the request into a domain command.
+4. The checkout service performs one catalog lookup and rejects unknown products.
+5. The pricing domain combines duplicate lines, applies every complete offer bundle and prices the remaining units normally.
+6. The backend returns an itemized receipt with exact EUR strings and the catalog revision.
+7. The storefront displays the receipt only if its catalog revision still matches.
+
+Receipts are calculated quotes. They are neither persisted nor treated as price reservations.
+
+### Scale and reliability choices
+
+- The backend remains stateless outside PostgreSQL and can be replicated behind a load balancer.
+- Catalog replacement uses a conditional revision update and one database transaction.
+- Requests are bounded to 1,000 entries and 1 MiB of JSON.
+- Public catalog responses currently return the complete bounded catalog in product-ID order.
+- Search and pagination require coordinated OpenAPI, database-query and frontend changes.
+- Checkout and catalog operations are synchronous, so the current scope has no asynchronous broker requirement.
+- Payments, inventory, orders, scheduled offer activation and user accounts remain separate future capabilities.
+
+The detailed package structure, generation boundary and verification strategy are documented in [`docs/architecture.md`](docs/architecture.md), while individual trade-offs are recorded in the [ADRs](docs/adr/).
+
 ## Prerequisites
 
 - JDK 21, with `JAVA_HOME` pointing to it
@@ -76,7 +163,7 @@ The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to 
 
 Actions are pinned to commit revisions. The workflow has read-only repository permissions, does not retain checkout credentials, cancels superseded runs and has a 15-minute timeout. No secrets or deployment configuration are required.
 
-The workflow definition is verified locally. Its first hosted execution requires publishing the repository to GitHub; no hosted result is claimed here.
+The workflow is verified locally and by the hosted GitHub Actions run on `main`; the latest status is visible in the repository Actions view.
 
 ## Structure and decisions
 
