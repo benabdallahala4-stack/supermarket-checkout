@@ -155,4 +155,8 @@ For the YAML demonstration without Docker:
 ./gradlew :backend:bootRun --args='--spring.profiles.active=config-catalog'
 ```
 
-`./scripts/verify.sh database` runs PostgreSQL integration tests. The backend/all verification modes include them and require a running Docker-compatible runtime. Tests create isolated databases; they do not use your development catalog. Runtime management endpoints and browser catalog reconciliation are separate upcoming milestones.
+`./scripts/verify.sh database` runs PostgreSQL integration tests. The backend/all verification modes include them and require a running Docker-compatible runtime. Tests create isolated databases; they do not use your development catalog. Protected runtime management is available through the optional operator profile; browser catalog reconciliation is the next milestone. See [operator workflow](docs/catalog-management.md).
+
+## Live catalog updates
+
+Use the opt-in [operator workflow](docs/catalog-management.md) to replace products and offers without restarting. It requires a secret token and the revision you read, rejects stale edits with 409, and commits rows and revision atomically. The storefront does not hold this credential.

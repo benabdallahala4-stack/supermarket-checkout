@@ -49,3 +49,7 @@ MapStruct implementations are generated under the backend build directory and ar
 Backend verification covers configuration, pricing, batch coordination, real generated mapper beans, strict HTTP input, response serialization and safe failures. Tests use the Spring application with MockMvc; only the catalog provider is substituted for empty-catalog and internal-error scenarios. A packaged-JAR HTTP smoke test verifies the catalog and three-apple flow.
 
 Contract validation and generated-client reproducibility also pass locally. The Angular 22 scaffold compiles the generated client under strict TypeScript and tests real generated service URLs/payloads with Angular HTTP testing. Hosted CI awaits publication.
+
+## Operator API
+
+GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and X-Catalog-Token header. GET returns revision/items; PUT replaces all items only if the submitted revision still matches. See [operator workflow](catalog-management.md) for 401/409 behavior, token handling and examples. Semantic catalog validation failures return 400; unexpected database failures remain generic 500 responses.

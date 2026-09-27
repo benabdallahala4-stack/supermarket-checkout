@@ -22,7 +22,9 @@ export interface ApiProblem {
 export enum ApiProblemCodeEnum {
     InvalidRequest = 'INVALID_REQUEST',
     UnknownProduct = 'UNKNOWN_PRODUCT',
-    InternalError = 'INTERNAL_ERROR'
+    InternalError = 'INTERNAL_ERROR',
+    Unauthorized = 'UNAUTHORIZED',
+    CatalogConflict = 'CATALOG_CONFLICT'
 };
 
 

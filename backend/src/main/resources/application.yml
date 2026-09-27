@@ -3,3 +3,6 @@ spring:
     url: ${CHECKOUT_DB_URL:jdbc:postgresql://localhost:5432/checkout}
     username: ${CHECKOUT_DB_USER:checkout}
     password: ${CHECKOUT_DB_PASSWORD:}
+checkout:
+  catalog-management:
+    token: ${CHECKOUT_CATALOG_TOKEN:}

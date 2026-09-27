@@ -90,6 +90,17 @@ constructor({ accessToken, apiKeys, basePath, credentials, encodeParam, encoder,
         }
         this.encodeParam = encodeParam ?? (param => this.defaultEncodeParam(param));
         this.credentials = credentials ?? {};
+
+        // init default CatalogToken credential
+        if (!this.credentials['CatalogToken']) {
+            this.credentials['CatalogToken'] = () => {
+                if (this.apiKeys === null || this.apiKeys === undefined) {
+                    return undefined;
+                } else {
+                    return this.apiKeys['CatalogToken'] || this.apiKeys['X-Catalog-Token'];
+                }
+            };
+        }
     }
 
     /**

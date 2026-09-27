@@ -6,7 +6,7 @@ Current implementation: Java 21 / Spring Boot bootstrap, OpenAPI contract, gener
 
 Target architecture: catalog and checkout features; PostgreSQL catalog with explicit YAML fallback; pure Java pricing; OpenAPI-generated REST interfaces/models and Angular client; MapStruct between REST and domain.
 
-Scope: EUR, integer quantities, one active single-product offer, repeated bundles and regular-price remainder. PostgreSQL persistence is implemented; payments, inventory, management authentication and scheduling remain outside the current implementation.
+Scope: EUR, integer quantities, one active single-product offer, repeated bundles and regular-price remainder. PostgreSQL persistence is implemented; payments, inventory, scheduling remain outside the current implementation. Optional token-protected catalog management is implemented.
 
 Invariants: BigDecimal money; duplicate items aggregate; input ordering does not affect the receipt; subtotal minus discount equals total; frontend displays backend prices.
 
@@ -16,6 +16,8 @@ Run: `./gradlew :backend:bootRun`.
 
 CI: pull requests and pushes to main run backend, contract and frontend jobs under Java 21 and pinned Node. Hosted execution awaits repository publication.
 
-Next milestones: protected atomic catalog updates, then public revision metadata and browser reconciliation; accessibility and final reviewer documentation follow. Frontend verification enforces 80% line coverage over handwritten checkout-feature code.
+Next milestone: public revision metadata and browser reconciliation; accessibility and final reviewer documentation follow. Frontend verification enforces 80% line coverage over handwritten checkout-feature code.
 
 Persistence: Flyway initializes demo data once; JDBC reads products/offers/revision in one statement. Default runtime needs PostgreSQL; config-catalog is the explicit YAML profile. Backend verification requires Docker for Testcontainers. See ADR 005 and README.
+
+Management: opt-in catalog-management profile, loopback by default, externally supplied token, generated GET/PUT contract, revision-based conflict409, atomic replacement and rollback. See docs/catalog-management.md.

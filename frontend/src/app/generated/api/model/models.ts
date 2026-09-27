@@ -5,6 +5,7 @@ export * from './checkoutReceipt';
 export * from './checkoutRequest';
 export * from './currency';
 export * from './fieldError';
+export * from './managedCatalog';
 export * from './product';
 export * from './productCatalog';
 export * from './quantityOffer';
