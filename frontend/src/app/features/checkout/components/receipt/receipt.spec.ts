@@ -4,6 +4,7 @@ import { Receipt } from './receipt';
 
 describe('Receipt', () => {
   const receipt: CheckoutReceipt = {
+    catalogRevision: 'revision-1',
     currency: Currency.Eur,
     items: [
       {
@@ -51,6 +52,7 @@ describe('Receipt', () => {
 
   it('renders an empty receipt with exact zero totals', async () => {
     const element = await render({
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [],
       subtotal: '0.00',
@@ -69,6 +71,7 @@ describe('Receipt', () => {
   it('preserves large decimal strings and omits offer text when no offer was applied', async () => {
     const amount = '9007199254740993.01';
     const element = await render({
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [
         {

@@ -23,9 +23,11 @@ public class CheckoutController implements CheckoutApi {
   @Override
   public ResponseEntity<CheckoutReceipt> calculateCheckout(CheckoutRequest request) {
     CheckoutCommand command = toCommand(request);
-    var receipt = service.checkout(command);
+    var result = service.checkout(command);
 
-    return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mapper.toRest(receipt));
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(mapper.toRest(result.receipt(), result.catalogRevision()));
   }
 
   private CheckoutCommand toCommand(CheckoutRequest request) {

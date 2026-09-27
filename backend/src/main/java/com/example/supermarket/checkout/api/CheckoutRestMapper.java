@@ -26,7 +26,7 @@ public interface CheckoutRestMapper {
   CartItem toCartItem(CheckoutItem item);
 
   @Mapping(target = "currency", constant = "EUR")
-  CheckoutReceipt toRest(Receipt receipt);
+  CheckoutReceipt toRest(Receipt receipt, String catalogRevision);
 
   com.example.supermarket.generated.model.ReceiptLine toRest(ReceiptLine line);
 

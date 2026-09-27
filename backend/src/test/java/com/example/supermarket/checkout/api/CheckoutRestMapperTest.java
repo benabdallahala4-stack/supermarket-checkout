@@ -41,9 +41,10 @@ class CheckoutRestMapperTest {
             List.of(new Product(id, "Apple", new BigDecimal("0.30"))),
             List.of(new QuantityOffer(id, 2, new BigDecimal("0.45"))));
     var receipt = new PricingCalculator().calculate(List.of(new CartItem(id, 3)), catalog);
-    var result = mapper.toRest(receipt);
+    var result = mapper.toRest(receipt, catalog.revision());
     var line = result.getItems().getFirst();
 
+    assertThat(result.getCatalogRevision()).isEqualTo(catalog.revision());
     assertThat(result.getCurrency()).isEqualTo(Currency.EUR);
     assertThat(result.getSubtotal()).isEqualTo("0.90");
     assertThat(result.getDiscount()).isEqualTo("0.15");
@@ -60,7 +61,9 @@ class CheckoutRestMapperTest {
     assertThat(line.getAppliedOffer().getApplications()).isEqualTo(1);
 
     var single =
-        mapper.toRest(new PricingCalculator().calculate(List.of(new CartItem(id, 1)), catalog));
+        mapper.toRest(
+            new PricingCalculator().calculate(List.of(new CartItem(id, 1)), catalog),
+            catalog.revision());
     assertThat(single.getItems().getFirst().getAppliedOffer()).isNull();
   }
 }

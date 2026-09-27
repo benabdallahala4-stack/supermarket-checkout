@@ -6,6 +6,14 @@
     </header>
 
     @let current = state();
+    @if (current.status === 'ready') {
+      <button class="refresh-products" type="button" [disabled]="busy()" (click)="refresh()">
+        Refresh products
+      </button>
+    }
+    @if (catalogNotice()) {
+      <p class="catalog-notice" role="status">{{ catalogNotice() }}</p>
+    }
     <p class="catalog-status" role="status">
       @switch (current.status) {
         @case ('loading') {
@@ -34,7 +42,7 @@
         [products]="current.catalog.items"
         [currency]="current.catalog.currency"
         [limitProductIds]="limitProductIds()"
-        [disabled]="pending()"
+        [disabled]="busy()"
         (add)="increment($event)"
       />
     }
@@ -44,7 +52,7 @@
     <app-cart
       [items]="cartLines()"
       [itemCount]="cart.itemCount()"
-      [disabled]="pending()"
+      [disabled]="busy()"
       (increment)="increment($event)"
       (decrement)="decrement($event)"
       (remove)="remove($event)"

@@ -5,7 +5,6 @@ import com.example.supermarket.catalog.domain.ProductId;
 import com.example.supermarket.checkout.domain.CartItem;
 import com.example.supermarket.checkout.domain.InvalidCartException;
 import com.example.supermarket.checkout.domain.PricingCalculator;
-import com.example.supermarket.checkout.domain.Receipt;
 import com.example.supermarket.checkout.domain.UnknownProductException;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -21,7 +20,7 @@ public class CheckoutService {
     this.calculator = calculator;
   }
 
-  public Receipt checkout(CheckoutCommand command) {
+  public CheckoutResult checkout(CheckoutCommand command) {
     if (command == null) {
       throw new InvalidCartException("Checkout command is required");
     }
@@ -36,6 +35,6 @@ public class CheckoutService {
       }
     }
 
-    return calculator.calculate(command.items(), catalog);
+    return new CheckoutResult(calculator.calculate(command.items(), catalog), catalog.revision());
   }
 }

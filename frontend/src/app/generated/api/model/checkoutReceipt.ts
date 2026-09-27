@@ -12,6 +12,10 @@ import { Currency } from './currency';
 
 
 export interface CheckoutReceipt { 
+    /**
+     * Opaque identifier of the exact catalog snapshot used for this response.
+     */
+    catalogRevision: string;
     currency: Currency;
     items: Array<ReceiptLine>;
     /**

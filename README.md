@@ -155,8 +155,12 @@ For the YAML demonstration without Docker:
 ./gradlew :backend:bootRun --args='--spring.profiles.active=config-catalog'
 ```
 
-`./scripts/verify.sh database` runs PostgreSQL integration tests. The backend/all verification modes include them and require a running Docker-compatible runtime. Tests create isolated databases; they do not use your development catalog. Protected runtime management is available through the optional operator profile; browser catalog reconciliation is the next milestone. See [operator workflow](docs/catalog-management.md).
+`./scripts/verify.sh database` runs PostgreSQL integration tests. The backend/all verification modes include them and require a running Docker-compatible runtime. Tests create isolated databases; they do not use your development catalog. Protected runtime management is available through the optional operator profile; the storefront supports explicit refresh and revision-aware receipt reconciliation. See [operator workflow](docs/catalog-management.md).
 
 ## Live catalog updates
 
 Use the opt-in [operator workflow](docs/catalog-management.md) to replace products and offers without restarting. It requires a secret token and the revision you read, rejects stale edits with 409, and commits rows and revision atomically. The storefront does not hold this credential.
+
+## Refreshing prices
+
+Select **Refresh products** to reload the catalog. This clears the displayed receipt, retains quantities for available products, and reports removed products. If a checkout detects changed prices, it reloads the catalog and asks you to calculate again. Failed refreshes preserve quantities and offer retry. Quotes are not price reservations; no background polling is performed. See [revision semantics](docs/api.md#catalog-revision-and-quote-reconciliation).

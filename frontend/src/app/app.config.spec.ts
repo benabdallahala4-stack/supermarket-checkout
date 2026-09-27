@@ -13,7 +13,12 @@ describe('Application HTTP configuration', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
   it('loads products using the generated service and one relative API prefix', () => {
-    const response = { currency: Currency.Eur, items: [], totalItems: 0 };
+    const response = {
+      catalogRevision: 'revision-1',
+      currency: Currency.Eur,
+      items: [],
+      totalItems: 0,
+    };
     const received = vi.fn();
     TestBed.inject(ProductsService).getProducts().subscribe(received);
     const request = TestBed.inject(HttpTestingController).expectOne('/api/products');
@@ -26,6 +31,7 @@ describe('Application HTTP configuration', () => {
   it('posts quantities and preserves monetary response strings through the generated service', () => {
     const payload = { items: [{ productId: 'APPLE', quantity: 3 }] };
     const response = {
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [],
       subtotal: '0.90',

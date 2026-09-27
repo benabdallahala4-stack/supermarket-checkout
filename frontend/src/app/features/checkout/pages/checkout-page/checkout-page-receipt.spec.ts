@@ -15,6 +15,7 @@ describe('CheckoutPage receipt lifecycle', () => {
   let cart: CartState;
 
   const receipt: CheckoutReceipt = {
+    catalogRevision: 'revision-1',
     currency: Currency.Eur,
     items: [
       {
@@ -65,6 +66,7 @@ describe('CheckoutPage receipt lifecycle', () => {
     cart = fixture.debugElement.injector.get(CartState);
     fixture.detectChanges();
     http.expectOne('/api/products').flush({
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [
         { id: 'APPLE', name: 'Apple', unitPrice: '0.30', offer: { quantity: 2, price: '0.45' } },
@@ -100,6 +102,7 @@ describe('CheckoutPage receipt lifecycle', () => {
     const request = http.expectOne('/api/checkout');
     expect(request.request.body).toEqual({ items: [] });
     request.flush({
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [],
       subtotal: '0.00',
@@ -269,7 +272,12 @@ describe('CheckoutPage receipt lifecycle', () => {
     button('Calculate checkout').dispatchEvent(new MouseEvent('click'));
     http.expectNone('/api/checkout');
 
-    catalog.flush({ currency: Currency.Eur, items: [], totalItems: 0 });
+    catalog.flush({
+      catalogRevision: 'revision-1',
+      currency: Currency.Eur,
+      items: [],
+      totalItems: 0,
+    });
     fixture.detectChanges();
     expect(button('Calculate checkout').disabled).toBe(false);
   });

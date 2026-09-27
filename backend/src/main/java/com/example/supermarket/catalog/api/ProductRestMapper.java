@@ -26,7 +26,12 @@ public interface ProductRestMapper {
   @Mapping(target = "price", source = "bundlePrice")
   com.example.supermarket.generated.model.QuantityOffer toRest(QuantityOffer offer);
 
-  default ProductCatalog toCatalog(List<com.example.supermarket.generated.model.Product> items) {
-    return new ProductCatalog(Currency.EUR, items, items.size());
+  default ProductCatalog toCatalog(
+      List<com.example.supermarket.generated.model.Product> items, String catalogRevision) {
+    return new ProductCatalog()
+        .currency(Currency.EUR)
+        .items(items)
+        .totalItems(items.size())
+        .catalogRevision(catalogRevision);
   }
 }

@@ -37,6 +37,7 @@ describe('CheckoutPage cart controls', () => {
     element = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/products').flush({
+      catalogRevision: 'revision-1',
       currency: Currency.Eur,
       items: [
         { id: 'APPLE', name: 'Apple', unitPrice: '0.30', offer: { quantity: 2, price: '0.45' } },
@@ -114,7 +115,9 @@ describe('CheckoutPage cart controls', () => {
     fixture.destroy();
     fixture = TestBed.createComponent(CheckoutPage);
     fixture.detectChanges();
-    http.expectOne('/api/products').flush({ currency: Currency.Eur, items: [], totalItems: 0 });
+    http
+      .expectOne('/api/products')
+      .flush({ catalogRevision: 'revision-1', currency: Currency.Eur, items: [], totalItems: 0 });
     fixture.detectChanges();
     element = fixture.nativeElement;
 

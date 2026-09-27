@@ -14,7 +14,9 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const http = TestBed.inject(HttpTestingController);
-    http.expectOne('/api/products').flush({ currency: Currency.Eur, items: [], totalItems: 0 });
+    http
+      .expectOne('/api/products')
+      .flush({ catalogRevision: 'revision-1', currency: Currency.Eur, items: [], totalItems: 0 });
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
 

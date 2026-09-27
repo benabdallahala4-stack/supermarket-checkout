@@ -12,6 +12,10 @@ import { Product } from './product';
 
 
 export interface ProductCatalog { 
+    /**
+     * Opaque identifier of the exact catalog snapshot used for this response.
+     */
+    catalogRevision: string;
     currency: Currency;
     items: Array<Product>;
     totalItems: number;

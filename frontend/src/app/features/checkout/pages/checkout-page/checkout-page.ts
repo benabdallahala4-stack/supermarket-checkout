@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CheckoutItem,
@@ -30,6 +31,7 @@ type CheckoutResult =
 
 interface CheckoutAttempt {
   readonly requestId: number;
+  readonly catalogRevision: string;
   readonly cartSnapshot: readonly Readonly<CheckoutItem>[];
   readonly result: CheckoutResult;
 }
@@ -47,20 +49,29 @@ export class CheckoutPage {
   private readonly checkoutService = inject(CheckoutService);
   private readonly checkoutAttempt = signal<CheckoutAttempt | null>(null);
   private nextRequestId = 0;
+  private catalogRequestId = 0;
 
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly cart = inject(CartState);
 
   protected readonly state = signal<CatalogState>({ status: 'loading' });
+  protected readonly catalogNotice = signal('');
 
   protected readonly checkout = computed<CheckoutResult>(() => {
     const attempt = this.checkoutAttempt();
 
-    return attempt?.cartSnapshot === this.cart.items() ? attempt.result : { status: 'idle' };
+    const catalog = this.state();
+
+    return attempt?.cartSnapshot === this.cart.items() &&
+      catalog.status === 'ready' &&
+      attempt.catalogRevision === catalog.catalog.catalogRevision
+      ? attempt.result
+      : { status: 'idle' };
   });
 
   protected readonly pending = computed(() => this.checkout().status === 'pending');
+  protected readonly busy = computed(() => this.pending() || this.state().status !== 'ready');
 
   protected readonly limitProductIds = computed(
     () =>
@@ -83,16 +94,20 @@ export class CheckoutPage {
   });
 
   constructor() {
-    this.loadCatalog();
+    this.loadCatalog('initial');
   }
 
   protected calculate(): void {
-    if (this.pending() || this.state().status !== 'ready') {
+    const catalog = this.state();
+    if (this.pending() || catalog.status !== 'ready') {
       return;
     }
 
+    this.catalogNotice.set('');
+
     const attempt: CheckoutAttempt = {
       requestId: ++this.nextRequestId,
+      catalogRevision: catalog.catalog.catalogRevision,
       cartSnapshot: this.cart.items(),
       result: { status: 'pending' },
     };
@@ -103,60 +118,128 @@ export class CheckoutPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (receipt) => this.completeCheckout(attempt, { status: 'ready', receipt }),
-        error: () => this.completeCheckout(attempt, { status: 'error' }),
+        error: (error: unknown) => {
+          if (this.isCurrent(attempt) && this.isUnknownProduct(error)) {
+            this.loadCatalog('changed');
+          } else {
+            this.completeCheckout(attempt, { status: 'error' });
+          }
+        },
       });
   }
 
   protected increment(productId: string): void {
-    if (!this.pending()) {
+    if (!this.busy()) {
       this.cart.increment(productId);
     }
   }
 
   protected decrement(productId: string): void {
-    if (!this.pending()) {
+    if (!this.busy()) {
       this.cart.decrement(productId);
     }
   }
 
   protected remove(productId: string): void {
-    if (!this.pending()) {
+    if (!this.busy()) {
       this.cart.remove(productId);
     }
   }
 
   protected clear(): void {
-    if (!this.pending()) {
+    if (!this.busy()) {
       this.cart.clear();
     }
   }
 
+  private isCurrent(attempt: CheckoutAttempt): boolean {
+    const catalog = this.state();
+    return (
+      this.checkoutAttempt()?.requestId === attempt.requestId &&
+      this.cart.items() === attempt.cartSnapshot &&
+      catalog.status === 'ready' &&
+      catalog.catalog.catalogRevision === attempt.catalogRevision
+    );
+  }
+
   private completeCheckout(attempt: CheckoutAttempt, result: CheckoutResult): void {
-    if (
-      this.checkoutAttempt()?.requestId !== attempt.requestId ||
-      this.cart.items() !== attempt.cartSnapshot
-    ) {
+    if (!this.isCurrent(attempt)) {
+      return;
+    }
+
+    if (result.status === 'ready' && result.receipt.catalogRevision !== attempt.catalogRevision) {
+      this.loadCatalog('changed');
       return;
     }
 
     this.checkoutAttempt.set({ ...attempt, result });
   }
 
-  protected retry(): void {
-    if (this.state().status === 'error') {
-      this.loadCatalog();
+  private isUnknownProduct(error: unknown): boolean {
+    if (!(error instanceof HttpErrorResponse) || error.status !== 400) {
+      return false;
+    }
+    const problem: unknown = error.error;
+    return (
+      typeof problem === 'object' &&
+      problem !== null &&
+      'code' in problem &&
+      problem.code === 'UNKNOWN_PRODUCT'
+    );
+  }
+
+  protected refresh(): void {
+    if (!this.busy()) {
+      this.loadCatalog('refresh');
     }
   }
 
-  private loadCatalog(): void {
+  protected retry(): void {
+    if (this.state().status === 'error') {
+      this.loadCatalog('refresh');
+    }
+  }
+
+  private loadCatalog(reason: 'initial' | 'refresh' | 'changed'): void {
+    const requestId = ++this.catalogRequestId;
+    this.checkoutAttempt.set(null);
+    this.catalogNotice.set(reason === 'changed' ? 'Catalog changed. Refreshing products…' : '');
     this.state.set({ status: 'loading' });
 
     this.products
       .getProducts()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (catalog) => this.state.set({ status: 'ready', catalog }),
-        error: () => this.state.set({ status: 'error' }),
+        next: (catalog) => {
+          if (requestId !== this.catalogRequestId) {
+            return;
+          }
+
+          const available = new Set(catalog.items.map((product) => product.id));
+          const removed = this.cart.items().filter((item) => !available.has(item.productId));
+          for (const item of removed) {
+            this.cart.remove(item.productId);
+          }
+
+          this.state.set({ status: 'ready', catalog });
+          const refreshed =
+            reason === 'initial' ? '' : 'Products refreshed. Calculate checkout again.';
+          const removal =
+            removed.length === 0
+              ? ''
+              : ` Removed unavailable products: ${removed.map((item) => item.productId).join(', ')}.`;
+          this.catalogNotice.set(refreshed + removal);
+        },
+        error: () => {
+          if (requestId !== this.catalogRequestId) {
+            return;
+          }
+
+          this.state.set({ status: 'error' });
+          this.catalogNotice.set(
+            reason === 'changed' ? 'Catalog changed. Refresh failed. Try again.' : '',
+          );
+        },
       });
   }
 }

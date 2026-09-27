@@ -34,7 +34,7 @@ catalog_request -X PUT -H 'Content-Type: application/json' \
   http://127.0.0.1:8080/api/management/catalog
 ```
 
-The response contains the committed catalog and its new revision. Public product reads and subsequent checkouts use the new prices immediately. Existing browser displays do not update automatically yet; explicit storefront refresh/reconciliation is the next milestone.
+The response contains the committed catalog and its new revision. Public product reads and subsequent checkouts use the new prices immediately. The storefront discovers changes when the user selects Refresh products or calculates checkout. A receipt from a different revision is discarded, products are refreshed, and the user is asked to calculate again. There is no background polling.
 
 An empty `items` array intentionally removes every product and offer. Omitted products are deleted; omitted offers are removed. Empty catalogs and edits survive application restarts. This operation does not store carts, receipts or orders.
 

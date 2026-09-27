@@ -59,3 +59,11 @@ h2 {
   color: var(--color-muted);
   font-size: 0.875rem;
 }
+
+.refresh-products {
+  margin-top: 1rem;
+}
+
+.catalog-notice {
+  overflow-wrap: anywhere;
+}

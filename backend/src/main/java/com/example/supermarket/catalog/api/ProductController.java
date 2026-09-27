@@ -28,7 +28,8 @@ public class ProductController implements ProductsApi {
             .toList();
 
     return ResponseEntity.ok()
+        .header("Cache-Control", "no-store")
         .contentType(MediaType.APPLICATION_JSON)
-        .body(mapper.toCatalog(items));
+        .body(mapper.toCatalog(items, catalog.revision()));
   }
 }

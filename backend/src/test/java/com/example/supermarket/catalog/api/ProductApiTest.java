@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProductApiTest {
+  @Autowired private com.example.supermarket.catalog.application.port.CatalogProvider provider;
   @Autowired private MockMvc mvc;
 
   @Test
@@ -26,11 +27,12 @@ class ProductApiTest {
             content()
                 .json(
                     """
-            {"currency":"EUR","totalItems":3,"items":[
+            {"catalogRevision":"%s","currency":"EUR","totalItems":3,"items":[
               {"id":"APPLE","name":"Apple","unitPrice":"0.30","offer":{"quantity":2,"price":"0.45"}},
               {"id":"BANANA","name":"Banana","unitPrice":"0.50","offer":{"quantity":3,"price":"1.20"}},
               {"id":"ORANGE","name":"Orange","unitPrice":"0.80"}]}
-            """,
+            """
+                        .formatted(provider.findAll().revision()),
                     JsonCompareMode.STRICT))
         .andExpect(jsonPath("$.items[2].offer").doesNotHaveJsonPath());
   }

@@ -47,7 +47,9 @@ class CheckoutServiceTest {
         new CheckoutCommand(
             List.of(new CartItem(apple, 1), new CartItem(banana, 1), new CartItem(apple, 2)));
 
-    Receipt receipt = service.checkout(command);
+    var result = service.checkout(command);
+    Receipt receipt = result.receipt();
+    assertThat(result.catalogRevision()).isEqualTo(catalog.revision());
 
     assertThat(provider.calls).isEqualTo(1);
     assertThat(provider.requested).containsExactlyInAnyOrder(apple, banana);
@@ -76,7 +78,8 @@ class CheckoutServiceTest {
     var provider = new RecordingProvider(new CatalogSnapshot(List.of(), List.of()));
     Receipt receipt =
         new CheckoutService(provider, new PricingCalculator())
-            .checkout(new CheckoutCommand(List.of()));
+            .checkout(new CheckoutCommand(List.of()))
+            .receipt();
 
     assertThat(provider.calls).isEqualTo(1);
     assertThat(provider.requested).isEmpty();

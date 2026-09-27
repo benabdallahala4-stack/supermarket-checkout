@@ -6,8 +6,8 @@ The source of truth is [api/openapi.yaml](../api/openapi.yaml). Handwritten cont
 
 | Operation | Request | Successful response |
 | --- | --- | --- |
-| `GET /api/products` (`getProducts`) | None | `currency`, sorted `items`, `totalItems` |
-| `POST /api/checkout` (`calculateCheckout`) | `items` containing `productId` and positive integer `quantity` | Itemized receipt and subtotal, discount, total |
+| `GET /api/products` (`getProducts`) | None | `catalogRevision`, `currency`, sorted `items`, `totalItems` |
+| `POST /api/checkout` (`calculateCheckout`) | `items` containing `productId` and positive integer `quantity` | Itemized receipt, `catalogRevision`, subtotal, discount, total |
 
 All monetary values are nonnegative EUR strings with exactly two decimal places. Product identifiers are case-sensitive and nonblank. Optional `offer` and `appliedOffer` properties are omitted when absent. Requests reject unknown fields. Response objects permit additive properties for forward compatibility.
 
@@ -53,3 +53,13 @@ Contract validation and generated-client reproducibility also pass locally. The 
 ## Operator API
 
 GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and X-Catalog-Token header. GET returns revision/items; PUT replaces all items only if the submitted revision still matches. See [operator workflow](catalog-management.md) for 401/409 behavior, token handling and examples. Semantic catalog validation failures return 400; unexpected database failures remain generic 500 responses.
+
+## Catalog revision and quote reconciliation
+
+Public product and checkout responses require an opaque `catalogRevision`. It identifies the exact catalog snapshot used for that response, including empty catalogs and empty receipts. Compare it for equality only. Checkout carries the revision through an application result alongside the pure pricing receipt; it does not perform a second catalog read. Product responses use Cache-Control: no-store.
+
+The storefront clears displayed receipts immediately on manual refresh. Quantities for still-available products are preserved; unavailable product IDs are removed with an explicit notice after a successful refresh. A failed refresh preserves the cart and disables checkout until retry succeeds.
+
+If checkout returns a different revision from the displayed catalog, its quote is not shown. The page refreshes products and requires another explicit calculation, even if the catalog changes again during that refresh. An unknown-product response also triggers this reconciliation. Obsolete checkout responses are ignored by request identity, cart snapshot identity and catalog revision. UI guards prevent overlapping refresh actions; request sequencing additionally rejects superseded catalog callbacks.
+
+Receipts are quotes as of their calculation, not orders or locked prices. No polling or push is implemented: changes made elsewhere become visible at refresh or checkout. Revision equality cannot promise prices will remain unchanged after the server responds. Scheduled activation would require additional effective-view semantics.

@@ -59,6 +59,7 @@ class CatalogManagementApiTest {
         .andExpect(jsonPath("$.items[0].id").value("TEA"));
     assertThat(provider.findAll().revision()).isNotEqualTo(before.revision());
     mvc.perform(get("/api/products"))
+        .andExpect(jsonPath("$.catalogRevision").value(provider.findAll().revision()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value("TEA"));
     mvc.perform(
@@ -66,7 +67,8 @@ class CatalogManagementApiTest {
                 .contentType("application/json")
                 .content("{\"items\":[{\"productId\":\"TEA\",\"quantity\":4}]}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.total").value("7.00"));
+        .andExpect(jsonPath("$.total").value("7.00"))
+        .andExpect(jsonPath("$.catalogRevision").value(provider.findAll().revision()));
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
@@ -125,7 +127,9 @@ class CatalogManagementApiTest {
                 .content(payload(provider.findAll().revision(), "[]")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items").isEmpty());
-    mvc.perform(get("/api/products")).andExpect(jsonPath("$.items").isEmpty());
+    mvc.perform(get("/api/products"))
+        .andExpect(jsonPath("$.items").isEmpty())
+        .andExpect(jsonPath("$.catalogRevision").value(provider.findAll().revision()));
   }
 
   private String payload(String revision, String items) {

@@ -10,6 +10,7 @@ describe('CheckoutPage catalog', () => {
   let element: HTMLElement;
 
   const catalog: ProductCatalog = {
+    catalogRevision: 'revision-1',
     currency: Currency.Eur,
     items: [
       { id: 'APPLE', name: 'Apple', unitPrice: '0.30', offer: { quantity: 2, price: '0.45' } },
@@ -83,7 +84,9 @@ describe('CheckoutPage catalog', () => {
   });
 
   it('shows an empty catalog without product rows', () => {
-    http.expectOne('/api/products').flush({ currency: Currency.Eur, items: [], totalItems: 0 });
+    http
+      .expectOne('/api/products')
+      .flush({ catalogRevision: 'revision-1', currency: Currency.Eur, items: [], totalItems: 0 });
     fixture.detectChanges();
 
     expect(element.querySelector('[role="status"]')?.textContent).toContain(

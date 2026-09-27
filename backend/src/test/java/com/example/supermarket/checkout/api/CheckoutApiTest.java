@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class CheckoutApiTest {
+  @Autowired private com.example.supermarket.catalog.application.port.CatalogProvider provider;
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper objectMapper;
 
@@ -44,11 +45,12 @@ class CheckoutApiTest {
             content()
                 .json(
                     """
-            {"currency":"EUR","items":[{"productId":"APPLE","name":"Apple","quantity":3,
+            {"catalogRevision":"%s","currency":"EUR","items":[{"productId":"APPLE","name":"Apple","quantity":3,
             "unitPrice":"0.30","subtotal":"0.90","discount":"0.15","total":"0.75",
             "appliedOffer":{"quantity":2,"price":"0.45","applications":1}}],
             "subtotal":"0.90","discount":"0.15","total":"0.75"}
-            """,
+            """
+                        .formatted(provider.findAll().revision()),
                     JsonCompareMode.STRICT));
   }
 
@@ -60,8 +62,9 @@ class CheckoutApiTest {
             content()
                 .json(
                     """
-            {"currency":"EUR","items":[],"subtotal":"0.00","discount":"0.00","total":"0.00"}
-            """,
+            {"catalogRevision":"%s","currency":"EUR","items":[],"subtotal":"0.00","discount":"0.00","total":"0.00"}
+            """
+                        .formatted(provider.findAll().revision()),
                     JsonCompareMode.STRICT));
   }
 

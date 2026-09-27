@@ -92,6 +92,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProductCatalog'
               example:
+                catalogRevision: 'example-catalog-revision'
                 currency: EUR
                 items:
                   - id: APPLE
@@ -139,6 +140,7 @@ paths:
               examples:
                 threeApples:
                   value:
+                    catalogRevision: 'example-catalog-revision'
                     currency: EUR
                     items:
                       - productId: APPLE
@@ -153,7 +155,7 @@ paths:
                     discount: '0.15'
                     total: '0.75'
                 empty:
-                  value: {currency: EUR, items: [], subtotal: '0.00', discount: '0.00', total: '0.00'}
+                  value: {catalogRevision: 'example-catalog-revision', currency: EUR, items: [], subtotal: '0.00', discount: '0.00', total: '0.00'}
         '400':
           description: Invalid input, aggregate quantity overflow, or unknown product. No partial receipt.
           content:
@@ -250,8 +252,12 @@ components:
       example: APPLE
     ProductCatalog:
       type: object
-      required: [currency, items, totalItems]
+      required: [currency, items, totalItems, catalogRevision]
       properties:
+        catalogRevision:
+          type: string
+          minLength: 1
+          description: Opaque identifier of the exact catalog snapshot used for this response.
         currency:
           $ref: '#/components/schemas/Currency'
         items:
@@ -312,8 +318,12 @@ components:
           description: Integer JSON token; quoted numbers and decimal tokens are rejected.
     CheckoutReceipt:
       type: object
-      required: [currency, items, subtotal, discount, total]
+      required: [currency, items, subtotal, discount, total, catalogRevision]
       properties:
+        catalogRevision:
+          type: string
+          minLength: 1
+          description: Opaque identifier of the exact catalog snapshot used for this response.
         currency:
           $ref: '#/components/schemas/Currency'
         items:

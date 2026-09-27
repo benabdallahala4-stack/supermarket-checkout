@@ -31,12 +31,12 @@ class ProductRestMapperTest {
   @Test
   void mapsAbsentOfferAndEnvelope() {
     var item = mapper.toRest(product, null);
-    var result = mapper.toCatalog(List.of(item));
+    var result = mapper.toCatalog(List.of(item), "test-revision");
 
     assertThat(item.getOffer()).isNull();
     assertThat(result.getItems()).containsExactly(item);
     assertThat(result.getTotalItems()).isEqualTo(1);
     assertThat(result.getCurrency()).isEqualTo(Currency.EUR);
-    assertThat(mapper.toCatalog(List.of()).getTotalItems()).isZero();
+    assertThat(mapper.toCatalog(List.of(), "test-revision").getTotalItems()).isZero();
   }
 }
