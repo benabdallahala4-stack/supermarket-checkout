@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.example.supermarket.catalog.application.port.CatalogProvider;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -46,16 +48,18 @@ class CatalogManagementApiTest {
     var before = provider.findAll();
     mvc.perform(get(PATH).header("X-Catalog-Token", TOKEN))
         .andExpect(status().isOk())
+        .andExpect(header().string("ETag", etag(before.revision())))
         .andExpect(jsonPath("$.revision").value(before.revision()));
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
                 .contentType("application/json")
                 .content(
-                    payload(
-                        before.revision(),
+                    replacement(
                         "[{\"id\":\"TEA\",\"name\":\"Tea\",\"unitPrice\":\"2.00\",\"offer\":{\"quantity\":3,\"price\":\"5.00\"}}]")))
         .andExpect(status().isOk())
+        .andExpect(header().exists("ETag"))
         .andExpect(jsonPath("$.items[0].id").value("TEA"));
     assertThat(provider.findAll().revision()).isNotEqualTo(before.revision());
     mvc.perform(get("/api/products"))
@@ -72,9 +76,10 @@ class CatalogManagementApiTest {
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
                 .contentType("application/json")
-                .content(payload(before.revision(), "[]")))
-        .andExpect(status().isConflict())
+                .content(replacement("[]")))
+        .andExpect(status().isPreconditionFailed())
         .andExpect(jsonPath("$.code").value("CATALOG_CONFLICT"));
     assertThat(provider.findAll().products()).hasSize(1);
   }
@@ -111,9 +116,34 @@ class CatalogManagementApiTest {
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
                 .contentType("application/json")
-                .content(payload(before.revision(), items)))
+                .content(replacement(items)))
         .andExpect(status().isBadRequest());
+    assertThat(provider.findAll().revision()).isEqualTo(before.revision());
+    assertThat(provider.findAll().products()).isEqualTo(before.products());
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "[{\"id\":\"X\",\"name\":\"X\",\"unitPrice\":\"1.00\",\"extra\":true}]",
+        "[{\"id\":\"X\",\"name\":\"X\",\"unitPrice\":\"1.00\",\"offer\":{\"quantity\":2,\"price\":\"1.00\",\"extra\":true}}]",
+        "[{\"id\":\"X\",\"name\":\"   \",\"unitPrice\":\"1.00\"}]"
+      })
+  void rejectsContractInvalidCatalogFieldsWithGenericProblem(String items) throws Exception {
+    var before = provider.findAll();
+
+    mvc.perform(
+            put(PATH)
+                .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
+                .contentType("application/json")
+                .content(replacement(items)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.title").value("Invalid request"))
+        .andExpect(jsonPath("$.detail").value("The request body contains invalid data or JSON."));
+
     assertThat(provider.findAll().revision()).isEqualTo(before.revision());
     assertThat(provider.findAll().products()).isEqualTo(before.products());
   }
@@ -123,17 +153,23 @@ class CatalogManagementApiTest {
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(provider.findAll().revision()))
                 .contentType("application/json")
-                .content(payload(provider.findAll().revision(), "[]")))
+                .content(replacement("[]")))
         .andExpect(status().isOk())
+        .andExpect(header().exists("ETag"))
         .andExpect(jsonPath("$.items").isEmpty());
     mvc.perform(get("/api/products"))
         .andExpect(jsonPath("$.items").isEmpty())
         .andExpect(jsonPath("$.catalogRevision").value(provider.findAll().revision()));
   }
 
-  private String payload(String revision, String items) {
-    return "{\"revision\":\"" + revision + "\",\"items\":" + items + "}";
+  private String replacement(String items) {
+    return "{\"items\":" + items + "}";
+  }
+
+  private String etag(String revision) {
+    return "\"" + revision + "\"";
   }
 
   @Test
@@ -154,26 +190,80 @@ class CatalogManagementApiTest {
               java.net.http.HttpResponse.BodyHandlers.ofString());
       assertThat(allowed.statusCode()).isEqualTo(200);
       assertThat(allowed.headers().firstValue("Cache-Control")).contains("no-store");
+      assertThat(allowed.headers().firstValue("ETag"))
+          .contains(etag(provider.findAll().revision()));
       assertThat(allowed.body()).doesNotContain(TOKEN);
     }
   }
 
-  @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "{}",
-        "{\"revision\":\"bad\",\"items\":[]}",
-        "{\"revision\":null,\"items\":[]}",
-        "{\"items\":[]}"
-      })
-  void rejectsMissingOrInvalidRevision(String payload) throws Exception {
+  @Test
+  void requiresIfMatchWithoutChangingData() throws Exception {
     var before = provider.findAll();
+
     mvc.perform(
             put(PATH)
                 .header("X-Catalog-Token", TOKEN)
                 .contentType("application/json")
-                .content(payload))
-        .andExpect(status().isBadRequest());
+                .content(replacement("[]")))
+        .andExpect(status().isPreconditionRequired())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+
     assertThat(provider.findAll().revision()).isEqualTo(before.revision());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bad", "*", "W/\"00000000-0000-0000-0000-000000000000\""})
+  void rejectsMalformedIfMatchWithoutChangingData(String ifMatch) throws Exception {
+    var before = provider.findAll();
+
+    mvc.perform(
+            put(PATH)
+                .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", ifMatch)
+                .contentType("application/json")
+                .content(replacement("[]")))
+        .andExpect(status().isBadRequest());
+
+    assertThat(provider.findAll().revision()).isEqualTo(before.revision());
+  }
+
+  @Test
+  void rejectsMoreThanOneThousandProductsWithoutChangingData() throws Exception {
+    var before = provider.findAll();
+
+    mvc.perform(
+            put(PATH)
+                .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
+                .contentType("application/json")
+                .content(replacement("[" + realisticProducts(1_001) + "]")))
+        .andExpect(status().isBadRequest());
+
+    assertThat(provider.findAll().revision()).isEqualTo(before.revision());
+    assertThat(provider.findAll().products()).isEqualTo(before.products());
+  }
+
+  @Test
+  void acceptsOneThousandRealisticProductsWithOffers() throws Exception {
+    var before = provider.findAll();
+
+    mvc.perform(
+            put(PATH)
+                .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
+                .contentType("application/json")
+                .content(replacement("[" + realisticProducts(1_000) + "]")))
+        .andExpect(status().isOk())
+        .andExpect(header().exists("ETag"))
+        .andExpect(jsonPath("$.items.length()").value(1_000));
+  }
+
+  private String realisticProducts(int count) {
+    return IntStream.range(0, count)
+        .mapToObj(
+            index ->
+                "{\"id\":\"PRODUCT%04d\",\"name\":\"Representative supermarket product number %04d\",\"unitPrice\":\"1.00\",\"offer\":{\"quantity\":2,\"price\":\"1.50\"}}"
+                    .formatted(index, index))
+        .collect(Collectors.joining(","));
   }
 }

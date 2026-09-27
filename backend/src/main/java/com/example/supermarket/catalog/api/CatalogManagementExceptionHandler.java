@@ -6,11 +6,43 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.*;
 
 @Order(0)
 @RestControllerAdvice(assignableTypes = CatalogManagementController.class)
 public class CatalogManagementExceptionHandler {
+  @ExceptionHandler(MissingRequestHeaderException.class)
+  ResponseEntity<ApiProblem> missingPrecondition(
+      MissingRequestHeaderException exception, HttpServletRequest request) {
+    return response(
+        428,
+        "Catalog precondition required",
+        "Supply the ETag from the last catalog read in If-Match.",
+        ApiProblem.CodeEnum.INVALID_REQUEST,
+        request);
+  }
+
+  @ExceptionHandler(CatalogEtag.PreconditionRequired.class)
+  ResponseEntity<ApiProblem> preconditionRequired(HttpServletRequest request) {
+    return response(
+        428,
+        "Catalog precondition required",
+        "Supply the ETag from the last catalog read in If-Match.",
+        ApiProblem.CodeEnum.INVALID_REQUEST,
+        request);
+  }
+
+  @ExceptionHandler(CatalogEtag.InvalidPrecondition.class)
+  ResponseEntity<ApiProblem> invalidPrecondition(HttpServletRequest request) {
+    return response(
+        400,
+        "Invalid catalog precondition",
+        "If-Match must contain one strong catalog ETag.",
+        ApiProblem.CodeEnum.INVALID_REQUEST,
+        request);
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   ResponseEntity<ApiProblem> invalidCatalog(
       IllegalArgumentException exception, HttpServletRequest request) {
@@ -26,8 +58,8 @@ public class CatalogManagementExceptionHandler {
   ResponseEntity<ApiProblem> conflict(
       CatalogConflictException exception, HttpServletRequest request) {
     return response(
-        409,
-        "Catalog changed",
+        412,
+        "Catalog precondition failed",
         "Read the catalog again before replacing it.",
         ApiProblem.CodeEnum.CATALOG_CONFLICT,
         request);

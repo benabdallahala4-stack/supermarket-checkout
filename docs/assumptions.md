@@ -1,6 +1,7 @@
 # Scope and assumptions
 
 - The catalog uses EUR, exact cents and integer product quantities. IDs are case-sensitive and are not normalized.
+- API requests are bounded to 1,000 product/cart entries and 1 MiB of JSON. A database integration test proves a 1,000-product replacement with representative names and offers.
 - There is at most one active single-product quantity offer. Every complete bundle receives the offer price; remaining units use the regular price. No cross-product, percentage or competing offers are supported.
 - Free products and free bundles are permitted, but an offer must still save money against its product's regular bundle price.
 - The default catalog is persisted in PostgreSQL and read per request. An optional protected replacement API updates products and offers without restart; scheduled activation is not implemented. The optional YAML profile selects its catalog at startup.

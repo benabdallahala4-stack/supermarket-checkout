@@ -19,6 +19,8 @@ import { Observable }                                        from 'rxjs';
 // @ts-ignore
 import { ApiProblem } from '../model/apiProblem';
 // @ts-ignore
+import { CatalogReplacement } from '../model/catalogReplacement';
+// @ts-ignore
 import { ManagedCatalog } from '../model/managedCatalog';
 
 // @ts-ignore
@@ -94,20 +96,27 @@ export class CatalogManagementService extends BaseService {
 
     /**
      * Atomically replace all products and offers
-     * Requires the catalog-management profile and an operator token. Submit the revision read by getManagedCatalog. A stale revision returns 409 without changing data. Empty items intentionally clears the catalog. Every successful replacement gets a new revision, including identical content. Prices are effective immediately.
-     * @param managedCatalog 
+     * Requires the catalog-management profile and an operator token. Submit the strong ETag read from getManagedCatalog in If-Match. A stale ETag returns 412 without changing data. Empty items intentionally clears the catalog. Every successful replacement gets a new revision, including identical content. Prices are effective immediately.
+     * @param ifMatch Strong ETag returned by the last management catalog read.
+     * @param catalogReplacement Complete replacement products and offers; concurrency is supplied by If-Match.
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public replaceCatalog(managedCatalog: ManagedCatalog, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ManagedCatalog>;
-    public replaceCatalog(managedCatalog: ManagedCatalog, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ManagedCatalog>>;
-    public replaceCatalog(managedCatalog: ManagedCatalog, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ManagedCatalog>>;
-    public replaceCatalog(managedCatalog: ManagedCatalog, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (managedCatalog === null || managedCatalog === undefined) {
-            throw new Error('Required parameter managedCatalog was null or undefined when calling replaceCatalog.');
+    public replaceCatalog(ifMatch: string, catalogReplacement: CatalogReplacement, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ManagedCatalog>;
+    public replaceCatalog(ifMatch: string, catalogReplacement: CatalogReplacement, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ManagedCatalog>>;
+    public replaceCatalog(ifMatch: string, catalogReplacement: CatalogReplacement, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ManagedCatalog>>;
+    public replaceCatalog(ifMatch: string, catalogReplacement: CatalogReplacement, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (ifMatch === null || ifMatch === undefined) {
+            throw new Error('Required parameter ifMatch was null or undefined when calling replaceCatalog.');
+        }
+        if (catalogReplacement === null || catalogReplacement === undefined) {
+            throw new Error('Required parameter catalogReplacement was null or undefined when calling replaceCatalog.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+        if (ifMatch !== undefined && ifMatch !== null) {
+            localVarHeaders = localVarHeaders.set('If-Match', String(ifMatch));
+        }
 
         // authentication (CatalogToken) required
         localVarHeaders = this.configuration.addCredentialToHeaders('CatalogToken', 'X-Catalog-Token', localVarHeaders);
@@ -150,7 +159,7 @@ export class CatalogManagementService extends BaseService {
         return this.httpClient.request<ManagedCatalog>('put', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: managedCatalog,
+                body: catalogReplacement,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

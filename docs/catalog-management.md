@@ -23,27 +23,33 @@ catalog_request() {
     curl --fail-with-body --config - "$@"
 }
 
-catalog_request http://127.0.0.1:8080/api/management/catalog > /tmp/catalog.json
+catalog_request -D /tmp/catalog.headers \
+  http://127.0.0.1:8080/api/management/catalog > /tmp/catalog.json
+
+catalog_etag="$(awk 'tolower($1) == "etag:" { print $2 }' /tmp/catalog.headers | tr -d '\r')"
 ```
 
-The response has `revision` and `items`. Each item has `id`, `name`, `unitPrice` and an optional `offer` with `quantity` and `price`. Prices are EUR strings with exactly two decimal places. Edit `/tmp/catalog.json`, preserving the revision you read. Then submit the complete replacement:
+The response has `revision` and `items`, and the `ETag` header is the quoted form of that revision. Each item has `id`, `name`, `unitPrice` and an optional `offer` with `quantity` and `price`. Prices are EUR strings with exactly two decimal places. A replacement accepts at most 1,000 products and the common 1 MiB JSON request limit; the maximum realistic catalog is covered by a database integration test.
+
+Create `/tmp/catalog-replacement.json` with an `items` property only; the update body does not repeat the revision. Then submit the complete replacement with the ETag read above:
 
 ```sh
-catalog_request -X PUT -H 'Content-Type: application/json' \
-  --data-binary @/tmp/catalog.json \
+catalog_request -X PUT -H 'Content-Type: application/json' -H "If-Match: $catalog_etag" \
+  --data-binary @/tmp/catalog-replacement.json \
   http://127.0.0.1:8080/api/management/catalog
 ```
 
-The response contains the committed catalog and its new revision. Public product reads and subsequent checkouts use the new prices immediately. The storefront discovers changes when the user selects Refresh products or calculates checkout. A receipt from a different revision is discarded, products are refreshed, and the user is asked to calculate again. There is no background polling.
+The response contains the committed catalog, its new revision and a new ETag. Public product reads and subsequent checkouts use the new prices immediately. The storefront discovers changes when the user selects Refresh products or calculates checkout. A receipt from a different revision is discarded, products are refreshed, and the user is asked to calculate again. There is no background polling.
 
 An empty `items` array intentionally removes every product and offer. Omitted products are deleted; omitted offers are removed. Empty catalogs and edits survive application restarts. This operation does not store carts, receipts or orders.
 
 ## Failure and concurrency policy
 
-- 400: invalid JSON, revision, products or offers; nothing changes.
+- 400: invalid JSON, malformed `If-Match`, products or offers; nothing changes.
 - 401: absent or incorrect token; the request body is not processed.
-- 409: another replacement committed since the supplied revision. Read again and resolve your edits; do not blindly retry with a fresh revision.
+- 412: another replacement committed since the supplied ETag. Read again and resolve your edits; do not blindly retry with a fresh ETag.
 - 415: send application/json.
+- 428: `If-Match` is missing; read the catalog before replacing it.
 - 500: unexpected failure. Database failures roll back the transaction. A failure after commit or a lost response can leave the outcome uncertain; read the catalog before retrying.
 
 The database serializes replacements through one conditional revision update. Products, offers and revision commit together; insertion errors roll them all back. Two writers using the same revision have exactly one winner. Even identical content receives a new revision. Direct SQL updates bypass these application guarantees and are not the supported editing workflow.

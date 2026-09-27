@@ -1,5 +1,6 @@
 package com.example.supermarket.support.api;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
@@ -10,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
 public class JsonConfiguration {
+  static final long MAX_REQUEST_DOCUMENT_LENGTH = 1024 * 1024;
+
   @Bean
   Jackson2ObjectMapperBuilderCustomizer strictRequestJson() {
     return builder -> {
@@ -20,6 +23,13 @@ public class JsonConfiguration {
 
       builder.postConfigurer(
           mapper -> {
+            mapper
+                .getFactory()
+                .setStreamReadConstraints(
+                    StreamReadConstraints.builder()
+                        .maxDocumentLength(MAX_REQUEST_DOCUMENT_LENGTH)
+                        .build());
+
             mapper
                 .coercionConfigFor(LogicalType.Integer)
                 .setCoercion(CoercionInputShape.String, CoercionAction.Fail)

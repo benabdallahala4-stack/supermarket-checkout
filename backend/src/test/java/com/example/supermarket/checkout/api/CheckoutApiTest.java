@@ -139,8 +139,8 @@ class CheckoutApiTest {
         .andExpect(status().isBadRequest())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.type").value("about:blank"))
-        .andExpect(jsonPath("$.title").isString())
-        .andExpect(jsonPath("$.detail").isString())
+        .andExpect(jsonPath("$.title").value("Invalid request"))
+        .andExpect(jsonPath("$.detail").value("The request body contains invalid data or JSON."))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.instance").value("/api/checkout"))
         .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));

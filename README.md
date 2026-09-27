@@ -2,9 +2,16 @@
 
 A supermarket checkout that applies active quantity offers automatically. The backend owns pricing; the Angular interface displays the catalog and active offers and manages cart quantities. An explicit checkout action retrieves itemized receipts and savings from the backend.
 
-## Current milestone
+## What is included
 
-The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It reads a persistent PostgreSQL catalog (with an explicit YAML fallback profile), applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. The cart supports adding products, changing quantities, removing products and clearing all items. Calculate checkout displays the server-calculated receipt, including applied offers and savings. Pending guards, error recovery and stale-response protection are covered by frontend tests.
+- A pure Java pricing domain that combines duplicate cart lines and applies every complete offer bundle, with regular pricing for the remainder.
+- A Spring Boot REST boundary that implements interfaces and models generated from one OpenAPI contract, connected to the domain through application services and structural MapStruct mappers.
+- A PostgreSQL catalog initialized by Flyway, plus an explicit YAML fallback profile for running the example without a database.
+- An opt-in, token-protected operator API that replaces products and offers atomically without restarting the application.
+- An Angular 22 storefront generated from the same contract. It keeps quantities in page-scoped state and always displays prices and receipt totals calculated by the backend.
+- Automated formatting, linting, architecture, contract-drift, unit, property, HTTP, PostgreSQL and frontend tests in the local verification script and CI.
+
+For a focused review, start with the [architecture guide](docs/architecture.md), the [API contract](api/openapi.yaml), and the [scope assumptions](docs/assumptions.md). The decisions behind the boundaries, contract, money representation and catalog storage are recorded in [the ADRs](docs/adr/).
 
 ## Prerequisites
 
@@ -78,9 +85,10 @@ The workflow definition is verified locally. Its first hosted execution requires
 - `frontend/`: Angular checkout page, product-list/cart/receipt components, quantity state, strict configuration, tests, lint/format rules and generated services/models
 - `gradle/wrapper/`: pinned Gradle distribution and download checksum
 - `scripts/verify.sh`: shared local verification entry point
-- `docs/adr/`: architectural decisions
+- `docs/architecture.md`: system design, request flows and dependency rules
+- `docs/adr/`: architectural decisions and trade-offs
 
-See [application boundaries](docs/adr/001-application-boundaries.md), [root agent instructions](AGENTS.md) and [backend conventions](backend/AGENTS.md).
+See [application boundaries](docs/adr/001-application-boundaries.md), [root agent instructions](AGENTS.md), [backend conventions](backend/AGENTS.md) and [frontend conventions](frontend/AGENTS.md).
 
 ## Domain verification
 
@@ -159,7 +167,7 @@ For the YAML demonstration without Docker:
 
 ## Live catalog updates
 
-Use the opt-in [operator workflow](docs/catalog-management.md) to replace products and offers without restarting. It requires a secret token and the revision you read, rejects stale edits with 409, and commits rows and revision atomically. The storefront does not hold this credential.
+Use the opt-in [operator workflow](docs/catalog-management.md) to replace products and offers without restarting. It requires a secret token and the strong ETag from the catalog read, rejects stale `If-Match` updates with 412, and commits rows and revision atomically. The storefront does not hold this credential.
 
 ## Refreshing prices
 

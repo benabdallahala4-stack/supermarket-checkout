@@ -9,9 +9,9 @@ The source of truth is [api/openapi.yaml](../api/openapi.yaml). Handwritten cont
 | `GET /api/products` (`getProducts`) | None | `catalogRevision`, `currency`, sorted `items`, `totalItems` |
 | `POST /api/checkout` (`calculateCheckout`) | `items` containing `productId` and positive integer `quantity` | Itemized receipt, `catalogRevision`, subtotal, discount, total |
 
-All monetary values are nonnegative EUR strings with exactly two decimal places. Product identifiers are case-sensitive and nonblank. Optional `offer` and `appliedOffer` properties are omitted when absent. Requests reject unknown fields. Response objects permit additive properties for forward compatibility.
+All monetary values are nonnegative EUR strings with exactly two decimal places. Product identifiers are case-sensitive and nonblank. Optional `offer` and `appliedOffer` properties are omitted when absent. Request-bearing product, offer, cart and management objects reject unknown properties. Response envelopes permit additive properties for forward compatibility.
 
-An empty items array is valid and produces a receipt with no lines and `"0.00"` amounts. Missing/null arrays or entries are invalid. Duplicate product quantities aggregate before pricing, and their sum must fit int32. Unknown products reject the whole request. The HTTP adapter rejects decimal and quoted quantity tokens. Jackson coercion is explicitly disabled; the generated integer model alone would not enforce this lexical rule.
+An empty items array is valid and produces a receipt with no lines and `"0.00"` amounts. Missing/null arrays or entries are invalid. A request accepts at most 1,000 cart lines; duplicate product quantities aggregate before pricing, and their sum must fit int32. Unknown products reject the whole request. The HTTP adapter rejects decimal and quoted quantity tokens. Jackson coercion is explicitly disabled and JSON documents are limited to 1 MiB during parsing; generated model constraints alone would not enforce these lexical and document-level rules. The parser limit bounds memory, while infrastructure or a reverse proxy must enforce any deployment-level bandwidth limit.
 
 The pinned generator emits nested `@Valid` items without element-level `@NotNull`. Mapping creates a CheckoutCommand whose constructor rejects null entries, so `items: [null]` returns 400. MockMvc tests also verify missing fields, whitespace IDs, invalid numeric tokens, unknown fields and trailing JSON. Generated classes are unchanged.
 
@@ -52,7 +52,7 @@ Contract validation and generated-client reproducibility also pass locally. The 
 
 ## Operator API
 
-GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and X-Catalog-Token header. GET returns revision/items; PUT replaces all items only if the submitted revision still matches. See [operator workflow](catalog-management.md) for 401/409 behavior, token handling and examples. Semantic catalog validation failures return 400; unexpected database failures remain generic 500 responses.
+GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and `X-Catalog-Token` header. GET returns revision/items and a strong `ETag`. PUT accepts an items-only replacement and requires that ETag in `If-Match`; the existing conditional database update remains the optimistic lock. Missing preconditions return 428, malformed validators return 400 and stale validators return 412. See [operator workflow](catalog-management.md) for token handling and examples. Semantic catalog validation failures return 400; unexpected database failures remain generic 500 responses.
 
 ## Catalog revision and quote reconciliation
 

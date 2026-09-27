@@ -45,8 +45,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     var problem =
         problem(
             HttpStatus.BAD_REQUEST,
-            "Invalid checkout request",
-            "One or more items are invalid.",
+            "Invalid request",
+            "The request body contains invalid data or JSON.",
             CodeEnum.INVALID_REQUEST,
             path(request));
     problem.setErrors(errors);
@@ -111,8 +111,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     return response(
         problem(
             HttpStatus.BAD_REQUEST,
-            "Invalid checkout request",
-            "The request contains invalid cart items or JSON.",
+            "Invalid request",
+            "The request body contains invalid data or JSON.",
             CodeEnum.INVALID_REQUEST,
             instance));
   }

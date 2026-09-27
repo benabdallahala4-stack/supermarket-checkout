@@ -1,5 +1,6 @@
 export * from './apiProblem';
 export * from './appliedOffer';
+export * from './catalogReplacement';
 export * from './checkoutItem';
 export * from './checkoutReceipt';
 export * from './checkoutRequest';

@@ -24,6 +24,9 @@ paths:
       responses:
         '200':
           description: Complete catalog for editing. Responses must not be cached.
+          headers:
+            ETag:
+              $ref: '#/components/headers/CatalogEtag'
           content:
             application/json:
               schema:
@@ -37,21 +40,33 @@ paths:
       operationId: replaceCatalog
       summary: Atomically replace all products and offers
       description: >-
-        Requires the catalog-management profile and an operator token. Submit the revision
-        read by getManagedCatalog. A stale revision returns 409 without changing data.
+        Requires the catalog-management profile and an operator token. Submit the strong ETag
+        read from getManagedCatalog in If-Match. A stale ETag returns 412 without changing data.
         Empty items intentionally clears the catalog. Every successful replacement gets
         a new revision, including identical content. Prices are effective immediately.
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          description: Strong ETag returned by the last management catalog read.
+          schema:
+            type: string
+            pattern: '^"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"$'
       security:
         - CatalogToken: []
       requestBody:
+        description: Complete replacement products and offers; concurrency is supplied by If-Match.
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ManagedCatalog'
+              $ref: '#/components/schemas/CatalogReplacement'
       responses:
         '200':
           description: Committed replacement and its new revision.
+          headers:
+            ETag:
+              $ref: '#/components/headers/CatalogEtag'
           content:
             application/json:
               schema:
@@ -64,8 +79,14 @@ paths:
                 $ref: '#/components/schemas/ApiProblem'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '409':
-          description: Revision conflict; read the catalog again before editing.
+        '412':
+          description: If-Match is stale; read the catalog again before editing.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '428':
+          description: If-Match is required for catalog replacement.
           content:
             application/problem+json:
               schema:
@@ -166,9 +187,9 @@ paths:
                 invalidQuantity:
                   value:
                     type: about:blank
-                    title: Invalid checkout request
+                    title: Invalid request
                     status: 400
-                    detail: One or more items are invalid.
+                    detail: The request body contains invalid data or JSON.
                     instance: /api/checkout
                     code: INVALID_REQUEST
                     errors: [{field: 'items[0].quantity', message: must be greater than zero}]
@@ -196,6 +217,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  headers:
+    CatalogEtag:
+      description: Strong validator for this exact catalog revision.
+      schema:
+        type: string
+        pattern: '^"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"$'
   securitySchemes:
     CatalogToken:
       type: apiKey
@@ -234,6 +261,17 @@ components:
           description: Opaque revision from the last operator read.
         items:
           type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/Product'
+    CatalogReplacement:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 1000
           items:
             $ref: '#/components/schemas/Product'
     Money:
@@ -270,6 +308,7 @@ components:
           minimum: 0
     Product:
       type: object
+      additionalProperties: false
       required: [id, name, unitPrice]
       properties:
         id:
@@ -277,12 +316,14 @@ components:
         name:
           type: string
           minLength: 1
+          pattern: '^[\s\S]*\S[\s\S]*$'
         unitPrice:
           $ref: '#/components/schemas/Money'
         offer:
           $ref: '#/components/schemas/QuantityOffer'
     QuantityOffer:
       type: object
+      additionalProperties: false
       description: Single-product active offer; omitted from Product when unavailable.
       required: [quantity, price]
       properties:
@@ -301,6 +342,7 @@ components:
         items:
           type: array
           description: Non-null entries; an empty array produces a zero receipt.
+          maxItems: 1000
           items:
             $ref: '#/components/schemas/CheckoutItem'
     CheckoutItem:

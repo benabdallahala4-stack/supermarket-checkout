@@ -3,6 +3,7 @@ package com.example.supermarket.catalog.api;
 import com.example.supermarket.catalog.domain.CatalogSnapshot;
 import com.example.supermarket.catalog.domain.Product;
 import com.example.supermarket.catalog.domain.QuantityOffer;
+import com.example.supermarket.generated.model.CatalogReplacement;
 import com.example.supermarket.generated.model.ManagedCatalog;
 import com.example.supermarket.support.api.RestValueMapper;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public interface CatalogManagementMapper {
   @Mapping(target = "price", source = "bundlePrice")
   com.example.supermarket.generated.model.QuantityOffer toRest(QuantityOffer offer);
 
-  default CatalogSnapshot toSnapshot(ManagedCatalog request) {
+  default CatalogSnapshot toSnapshot(CatalogReplacement request) {
     if (request.getItems() == null) {
       throw new IllegalArgumentException("Catalog items are required");
     }
