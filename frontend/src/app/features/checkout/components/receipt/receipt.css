@@ -28,6 +28,7 @@ li:first-child {
 p {
   margin: 0.5rem 0;
   font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 .quantity {
   color: var(--color-muted);

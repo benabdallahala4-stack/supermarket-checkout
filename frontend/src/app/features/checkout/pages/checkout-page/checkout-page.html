@@ -1,7 +1,7 @@
 <div class="checkout-layout">
   <section aria-labelledby="products-heading">
     <header class="catalog-header">
-      <h2 id="products-heading">Products</h2>
+      <h2 #productsHeading id="products-heading" tabindex="-1">Products</h2>
       <p>Browse unit prices and current quantity offers.</p>
     </header>
 
@@ -68,7 +68,7 @@
         Calculate checkout
       </button>
       @let result = checkout();
-      <p id="checkout-status" role="status">
+      <p #checkoutStatus id="checkout-status" tabindex="-1" role="status" aria-atomic="true">
         @switch (result.status) {
           @case ('pending') {
             Calculating your receipt…

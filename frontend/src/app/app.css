@@ -22,3 +22,7 @@ p {
   margin: 1rem 0 0;
   color: var(--color-muted);
 }
+
+h1 {
+  overflow-wrap: anywhere;
+}

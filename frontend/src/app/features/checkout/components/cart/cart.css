@@ -8,6 +8,7 @@ header,
 .item-heading {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -56,6 +57,7 @@ li:last-child {
 
 .quantity-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
@@ -68,6 +70,8 @@ li:last-child {
 }
 
 output {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   min-width: 2rem;
   padding-inline: 0.25rem;
   text-align: center;

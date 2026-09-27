@@ -1,11 +1,11 @@
 <section aria-labelledby="cart-heading">
   <header>
-    <h2 id="cart-heading">Your cart</h2>
+    <h2 #heading id="cart-heading" tabindex="-1">Your cart</h2>
     <button
       class="text-button"
       type="button"
       [disabled]="disabled() || items().length === 0"
-      (click)="clear.emit()"
+      (click)="clearItems()"
     >
       Clear cart
     </button>
@@ -28,7 +28,7 @@
               type="button"
               [attr.aria-label]="'Remove ' + item.name + ' from cart'"
               [disabled]="disabled()"
-              (click)="remove.emit(item.productId)"
+              (click)="removeItem(item.productId)"
             >
               Remove
             </button>
@@ -39,7 +39,7 @@
               type="button"
               [attr.aria-label]="'Decrease ' + item.name + ' quantity'"
               [disabled]="disabled()"
-              (click)="decrement.emit(item.productId)"
+              (click)="decrease(item)"
             >
               −
             </button>

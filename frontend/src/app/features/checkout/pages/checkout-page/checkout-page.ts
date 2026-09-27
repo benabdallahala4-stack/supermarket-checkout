@@ -3,6 +3,8 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
+  viewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -45,6 +47,8 @@ interface CheckoutAttempt {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckoutPage {
+  private readonly productsHeading = viewChild.required<ElementRef<HTMLElement>>('productsHeading');
+  private readonly checkoutStatus = viewChild.required<ElementRef<HTMLElement>>('checkoutStatus');
   private readonly products = inject(ProductsService);
   private readonly checkoutService = inject(CheckoutService);
   private readonly checkoutAttempt = signal<CheckoutAttempt | null>(null);
@@ -103,6 +107,7 @@ export class CheckoutPage {
       return;
     }
 
+    this.checkoutStatus().nativeElement.focus();
     this.catalogNotice.set('');
 
     const attempt: CheckoutAttempt = {
@@ -190,12 +195,14 @@ export class CheckoutPage {
 
   protected refresh(): void {
     if (!this.busy()) {
+      this.productsHeading().nativeElement.focus();
       this.loadCatalog('refresh');
     }
   }
 
   protected retry(): void {
     if (this.state().status === 'error') {
+      this.productsHeading().nativeElement.focus();
       this.loadCatalog('refresh');
     }
   }

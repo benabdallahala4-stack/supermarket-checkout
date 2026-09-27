@@ -40,7 +40,8 @@ button:hover {
   text-decoration: underline;
 }
 
-button:focus-visible {
+button:focus-visible,
+[tabindex='-1']:focus {
   outline: 3px solid var(--color-ink);
   outline-offset: 3px;
 }

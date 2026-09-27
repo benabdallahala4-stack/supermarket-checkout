@@ -67,3 +67,7 @@ h2 {
 .catalog-notice {
   overflow-wrap: anywhere;
 }
+
+.checkout-layout > section {
+  min-width: 0;
+}

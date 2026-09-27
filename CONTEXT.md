@@ -16,10 +16,12 @@ Run: `./gradlew :backend:bootRun`.
 
 CI: pull requests and pushes to main run backend, contract and frontend jobs under Java 21 and pinned Node. Hosted execution awaits repository publication.
 
-Next milestones: accessibility/responsive review and final reviewer documentation with clean-checkout verification. Frontend verification enforces 80% line coverage over handwritten checkout-feature code.
+Next milestone: final reviewer documentation and clean-checkout verification. Frontend verification enforces 80% line coverage over handwritten checkout-feature code.
 
 Persistence: Flyway initializes demo data once; JDBC reads products/offers/revision in one statement. Default runtime needs PostgreSQL; config-catalog is the explicit YAML profile. Backend verification requires Docker for Testcontainers. See ADR 005 and README.
 
 Management: opt-in catalog-management profile, loopback by default, externally supplied token, generated GET/PUT contract, revision-based conflict409, atomic replacement and rollback. See docs/catalog-management.md.
 
 Public responses carry catalogRevision from the same read snapshot. Storefront refresh clears quotes, retains available quantities, reports removals; revision mismatch/unknown products trigger refresh and explicit recalculation. No polling. Failed refresh preserves quantities and blocks checkout until retry.
+
+Accessibility: stable focus targets for refresh/retry, removal and checkout; long-content reflow at320px and200% text enlargement. The scoped audit is documented in docs/accessibility.md.

@@ -164,3 +164,7 @@ Use the opt-in [operator workflow](docs/catalog-management.md) to replace produc
 ## Refreshing prices
 
 Select **Refresh products** to reload the catalog. This clears the displayed receipt, retains quantities for available products, and reports removed products. If a checkout detects changed prices, it reloads the catalog and asks you to calculate again. Failed refreshes preserve quantities and offer retry. Quotes are not price reservations; no background polling is performed. See [revision semantics](docs/api.md#catalog-revision-and-quote-reconciliation).
+
+## Accessibility
+
+Keyboard focus is maintained across cart removal, refresh and checkout. Narrow layouts wrap long product names and exact amounts. See the [accessibility review](docs/accessibility.md) for the tested behavior and evidence.
