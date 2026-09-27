@@ -31,6 +31,7 @@ class ConfiguredCatalogProviderTest {
   void retrievesOnlyRequestedKnownProductsWithTheirOffers() {
     CatalogSnapshot subset = provider.findFor(Set.of(apple, unknown));
 
+    assertThat(subset.revision()).isEqualTo(provider.findAll().revision());
     assertThat(subset.products()).containsOnlyKeys(apple).containsEntry(apple, product);
     assertThat(subset.offers()).containsOnlyKeys(apple).containsEntry(apple, offer);
     assertThat(provider.findAll().products()).hasSize(2);
@@ -47,6 +48,7 @@ class ConfiguredCatalogProviderTest {
   @Test
   void emptyAndUnknownOnlyRequestsReturnEmptySnapshots() {
     for (Set<ProductId> ids : List.of(Set.<ProductId>of(), Set.of(unknown))) {
+      assertThat(provider.findFor(ids).revision()).isEqualTo(provider.findAll().revision());
       assertThat(provider.findFor(ids).products()).isEmpty();
       assertThat(provider.findFor(ids).offers()).isEmpty();
     }
@@ -63,6 +65,7 @@ class ConfiguredCatalogProviderTest {
     products.clear();
     offers.clear();
 
+    assertThat(subset.revision()).isEqualTo(provider.findAll().revision());
     assertThat(subset.products()).containsOnlyKeys(apple);
     assertThat(subset.offers()).containsOnlyKeys(apple);
     assertThat(provider.findAll().products()).containsOnlyKeys(apple);

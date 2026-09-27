@@ -1,6 +1,6 @@
 # ADR 004: active catalog from validated configuration
 
-Status: accepted
+Status: retained for the explicit `config-catalog` fallback; default persistence superseded by [ADR 005](005-database-catalog.md).
 
 ## Context
 

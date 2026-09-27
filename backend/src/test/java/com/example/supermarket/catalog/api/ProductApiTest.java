@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 
+@org.springframework.test.context.ActiveProfiles("config-catalog")
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProductApiTest {

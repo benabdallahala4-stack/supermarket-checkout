@@ -24,6 +24,12 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    implementation("org.flywaydb:flyway-core")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("org.postgresql:postgresql")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:junit-jupiter")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
@@ -184,4 +190,27 @@ tasks.jacocoTestCoverageVerification {
 
 tasks.check {
     dependsOn(tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
+}
+
+tasks.test {
+    useJUnitPlatform { excludeTags("database") }
+}
+
+val databaseTest by tasks.registering(Test::class) {
+    description = "Run PostgreSQL integration tests; a Docker-compatible runtime is required."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform { includeTags("database") }
+    shouldRunAfter(tasks.test)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(databaseTest)
+    executionData.setFrom(layout.buildDirectory.file("jacoco/test.exec"), layout.buildDirectory.file("jacoco/databaseTest.exec"))
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(databaseTest)
+    executionData.setFrom(layout.buildDirectory.file("jacoco/test.exec"), layout.buildDirectory.file("jacoco/databaseTest.exec"))
 }

@@ -4,12 +4,13 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 ## Current milestone
 
-The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It loads a validated YAML catalog, applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. The cart supports adding products, changing quantities, removing products and clearing all items. Calculate checkout displays the server-calculated receipt, including applied offers and savings. Pending guards, error recovery and stale-response protection are covered by frontend tests.
+The Spring Boot backend serves the product catalog and calculates itemized checkout receipts. It reads a persistent PostgreSQL catalog (with an explicit YAML fallback profile), applies quantity offers in a pure Java domain, and maps the OpenAPI-generated REST models with MapStruct. Strict JSON input validation and consistent problem responses are covered by HTTP integration tests. The Angular 22 catalog page uses the generated API service to display product prices and quantity offers, with loading, empty, error and retry states. Strict compilation, linting, formatting, Vitest and a feature coverage floor run in CI. The cart supports adding products, changing quantities, removing products and clearing all items. Calculate checkout displays the server-calculated receipt, including applied offers and savings. Pending guards, error recovery and stale-response protection are covered by frontend tests.
 
 ## Prerequisites
 
 - JDK 21, with `JAVA_HOME` pointing to it
 - Node 24.21.0 and its bundled npm 11.19.0, pinned in frontend/.nvmrc and frontend/package.json
+- Docker-compatible runtime for PostgreSQL and backend integration tests
 - Bash on Linux, macOS or WSL for the verification script
 - Internet access on the first build to download Gradle and dependencies
 
@@ -17,9 +18,11 @@ Gradle is supplied by the committed Wrapper; no global Gradle installation is ne
 
 ## Run
 
-From the repository root:
+From the repository root (see Persistent catalog below for connection settings):
 
 ```sh
+export CHECKOUT_DB_PASSWORD='choose-a-local-password'
+docker compose up -d --wait
 ./gradlew :backend:bootRun
 ```
 
@@ -44,7 +47,7 @@ This validates the contract, generates and compiles Spring types, checks Java fo
 ./gradlew --no-daemon :backend:check :backend:bootJar
 ```
 
-Run the packaged application with:
+With PostgreSQL running and the same database environment variables set, run the packaged application with:
 
 ```sh
 java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar
@@ -93,14 +96,14 @@ For an apple priced at EUR 0.30 with two for EUR 0.45, three apples cost EUR 0.7
 
 JUnit tests cover named examples, input errors, duplicate entries, immutable receipts, large quantities and concurrent calls. Three jqwik properties each generate 300 bounded catalog/cart cases for receipt arithmetic, order independence and split-entry equivalence. Gradle test reports retain jqwik's seed and minimized sample when a property fails; reproduce a failure by temporarily setting that property's `seed` to the reported value. Local `.jqwik-database` replay state is ignored.
 
-## Catalog configuration
+## YAML fallback catalog
 
-The bundled `backend/src/main/resources/application.yml` supplies three products and two active offers. Product and offer lists bind through Spring Boot; missing fields, duplicate IDs/offers, unknown references and invalid monetary or quantity values fail startup. Domain validation remains the source of semantic rules.
+With the `config-catalog` profile, bundled `backend/src/main/resources/application-config-catalog.yml` supplies three products and two active offers. Product and offer lists bind through Spring Boot; missing fields, duplicate IDs/offers, unknown references and invalid monetary or quantity values fail startup. Domain validation remains the source of semantic rules.
 
 To supply a different catalog, create an external YAML file with the same `checkout.catalog` structure, then start the packaged application with:
 
 ```sh
-java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.config.additional-location=file:./config/catalog.yml
+java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=config-catalog --spring.config.additional-location=file:./config/catalog.yml
 ```
 
 Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See [active catalog decision](docs/adr/004-active-catalog-configuration.md) and [scope assumptions](docs/assumptions.md).
@@ -133,3 +136,23 @@ Frontend verification performs a clean lockfile install, Prettier check, Angular
 Generated client files are excluded from handwritten linting/formatting and coverage, but remain included in strict TypeScript compilation and generation-drift checks. Coverage reports are under `frontend/coverage/`. Tests enforce an 80% line coverage floor over handwritten checkout-feature code. They exercise catalog loading, offers, empty responses, errors, retry guards and request cancellation using the real generated service with Angular HTTP testing. Cart tests cover quantity controls, count/empty state, int32 bounds, immutable snapshots, page-scoped lifetime and sorted checkout request projection without money calculations. Receipt tests verify exact server strings, empty checkout, pending guards, error recovery, invalidation, delayed/out-of-order responses and destruction cleanup. Responses are accepted only for the current request ID and immutable cart snapshot; the frontend never recalculates monetary amounts. Production bundle budgets are already enforced.
 
 The framework configuration follows the [Angular compatibility requirements](https://angular.dev/reference/versions) and the [CLI-supported Vitest coverage workflow](https://angular.dev/guide/testing/code-coverage).
+
+## Persistent catalog
+
+The default backend uses PostgreSQL. With Docker available, run from the repository root:
+
+```sh
+export CHECKOUT_DB_PASSWORD='choose-a-local-password'
+docker compose up -d --wait
+./gradlew :backend:bootRun
+```
+
+The password stays in your shell environment. The default connection is localhost:5432, database/user `checkout`; override `CHECKOUT_DB_URL` and `CHECKOUT_DB_USER` if needed. If changing `CHECKOUT_DB_PORT` for Compose, also adjust the JDBC URL. Stop with `docker compose down`; the named volume retains data. Flyway initializes demo products once and preserves subsequent edits and intentionally empty catalogs.
+
+For the YAML demonstration without Docker:
+
+```sh
+./gradlew :backend:bootRun --args='--spring.profiles.active=config-catalog'
+```
+
+`./scripts/verify.sh database` runs PostgreSQL integration tests. The backend/all verification modes include them and require a running Docker-compatible runtime. Tests create isolated databases; they do not use your development catalog. Runtime management endpoints and browser catalog reconciliation are separate upcoming milestones.

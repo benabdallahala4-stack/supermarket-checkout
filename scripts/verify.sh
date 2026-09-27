@@ -8,6 +8,9 @@ case "${1:-backend}" in
   backend)
     ./gradlew --no-daemon :backend:check :backend:bootJar
     ;;
+  database)
+    ./gradlew --no-daemon :backend:databaseTest
+    ;;
   contract)
     ./gradlew --no-daemon :backend:openApiValidate :backend:checkFrontendApi
     ;;
@@ -25,7 +28,7 @@ case "${1:-backend}" in
     "$project_dir/scripts/verify.sh" frontend
     ;;
   *)
-    printf 'Usage: %s [backend|contract|frontend|all]\n' "$0" >&2
+    printf 'Usage: %s [backend|database|contract|frontend|all]\n' "$0" >&2
     exit 2
     ;;
 esac

@@ -31,4 +31,22 @@ class ArchitectureTest {
           .should()
           .dependOnClassesThat()
           .resideInAPackage("..checkout..");
+
+  @ArchTest
+  static final ArchRule applicationDoesNotDependOnAdapters =
+      noClasses()
+          .that()
+          .resideInAPackage("..application..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("..persistence..", "..api..", "..generated..");
+
+  @ArchTest
+  static final ArchRule jdbcIsConfinedToPersistence =
+      noClasses()
+          .that()
+          .resideOutsideOfPackage("..persistence..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("org.springframework.jdbc..", "java.sql..", "javax.sql..");
 }

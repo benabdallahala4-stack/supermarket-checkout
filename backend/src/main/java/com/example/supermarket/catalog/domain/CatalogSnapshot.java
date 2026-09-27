@@ -4,13 +4,26 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /** An immutable catalog view with at most one discounted quantity offer per product. */
 public final class CatalogSnapshot {
+  private final String revision;
   private final Map<ProductId, Product> products;
   private final Map<ProductId, QuantityOffer> offers;
 
   public CatalogSnapshot(Collection<Product> products, Collection<QuantityOffer> offers) {
+    this(products, offers, UUID.randomUUID().toString());
+  }
+
+  public CatalogSnapshot(
+      Collection<Product> products, Collection<QuantityOffer> offers, String revision) {
+    if (revision == null || revision.isBlank()) {
+      throw new IllegalArgumentException("Catalog revision is required");
+    }
+
+    this.revision = revision;
+
     if (products == null || offers == null) {
       throw new IllegalArgumentException("Catalog collections are required");
     }
@@ -50,6 +63,10 @@ public final class CatalogSnapshot {
 
     this.products = Map.copyOf(productsById);
     this.offers = Map.copyOf(offersById);
+  }
+
+  public String revision() {
+    return revision;
   }
 
   public Map<ProductId, Product> products() {

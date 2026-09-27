@@ -1,19 +1,5 @@
-checkout:
-  catalog:
-    products:
-      - id: APPLE
-        name: Apple
-        unit-price: "0.30"
-      - id: BANANA
-        name: Banana
-        unit-price: "0.50"
-      - id: ORANGE
-        name: Orange
-        unit-price: "0.80"
-    offers:
-      - product-id: APPLE
-        quantity: 2
-        bundle-price: "0.45"
-      - product-id: BANANA
-        quantity: 3
-        bundle-price: "1.20"
+spring:
+  datasource:
+    url: ${CHECKOUT_DB_URL:jdbc:postgresql://localhost:5432/checkout}
+    username: ${CHECKOUT_DB_USER:checkout}
+    password: ${CHECKOUT_DB_PASSWORD:}

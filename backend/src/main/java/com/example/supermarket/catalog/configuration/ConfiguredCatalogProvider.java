@@ -48,6 +48,6 @@ public final class ConfiguredCatalogProvider implements CatalogProvider {
       }
     }
 
-    return new CatalogSnapshot(products, offers);
+    return new CatalogSnapshot(products, offers, snapshot.revision());
   }
 }

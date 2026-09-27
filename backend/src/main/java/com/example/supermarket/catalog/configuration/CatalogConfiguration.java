@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@org.springframework.context.annotation.Profile("config-catalog")
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(CatalogProperties.class)
 public class CatalogConfiguration {

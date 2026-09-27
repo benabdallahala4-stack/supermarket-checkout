@@ -35,6 +35,7 @@ class CatalogConfigurationTest {
 
   private ApplicationContextRunner context(Map<String, String> properties) {
     return new ApplicationContextRunner()
+        .withInitializer(context -> context.getEnvironment().setActiveProfiles("config-catalog"))
         .withUserConfiguration(CatalogConfiguration.class)
         .withPropertyValues(
             properties.entrySet().stream()
