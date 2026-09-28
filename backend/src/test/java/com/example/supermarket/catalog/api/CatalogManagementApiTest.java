@@ -124,12 +124,29 @@ class CatalogManagementApiTest {
     assertThat(provider.findAll().products()).isEqualTo(before.products());
   }
 
+  @Test
+  void reportsFieldErrorsForContractValidationWithoutChangingData() throws Exception {
+    var before = provider.findAll();
+
+    mvc.perform(
+            put(PATH)
+                .header("X-Catalog-Token", TOKEN)
+                .header("If-Match", etag(before.revision()))
+                .contentType("application/json")
+                .content(replacement("[{\"id\":\"X\",\"name\":\"   \",\"unitPrice\":\"1.00\"}]")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+        .andExpect(jsonPath("$.errors[?(@.field == 'items[0].name')]").isNotEmpty());
+
+    assertThat(provider.findAll().revision()).isEqualTo(before.revision());
+    assertThat(provider.findAll().products()).isEqualTo(before.products());
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {
         "[{\"id\":\"X\",\"name\":\"X\",\"unitPrice\":\"1.00\",\"extra\":true}]",
-        "[{\"id\":\"X\",\"name\":\"X\",\"unitPrice\":\"1.00\",\"offer\":{\"quantity\":2,\"price\":\"1.00\",\"extra\":true}}]",
-        "[{\"id\":\"X\",\"name\":\"   \",\"unitPrice\":\"1.00\"}]"
+        "[{\"id\":\"X\",\"name\":\"X\",\"unitPrice\":\"1.00\",\"offer\":{\"quantity\":2,\"price\":\"1.00\",\"extra\":true}}]"
       })
   void rejectsContractInvalidCatalogFieldsWithGenericProblem(String items) throws Exception {
     var before = provider.findAll();

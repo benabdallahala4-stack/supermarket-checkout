@@ -16,6 +16,9 @@ export interface ApiProblem {
     status: number;
     detail: string;
     instance: string;
+    /**
+     * Stable application code used for declared operations and framework-level API failures.
+     */
     code: ApiProblemCodeEnum;
     errors?: Array<FieldError>;
 }
@@ -24,7 +27,9 @@ export enum ApiProblemCodeEnum {
     UnknownProduct = 'UNKNOWN_PRODUCT',
     InternalError = 'INTERNAL_ERROR',
     Unauthorized = 'UNAUTHORIZED',
-    CatalogConflict = 'CATALOG_CONFLICT'
+    CatalogConflict = 'CATALOG_CONFLICT',
+    MethodNotAllowed = 'METHOD_NOT_ALLOWED',
+    NotAcceptable = 'NOT_ACCEPTABLE'
 };
 
 

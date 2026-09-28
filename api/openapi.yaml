@@ -438,7 +438,15 @@ components:
           type: string
         code:
           type: string
-          enum: [INVALID_REQUEST, UNKNOWN_PRODUCT, INTERNAL_ERROR, UNAUTHORIZED, CATALOG_CONFLICT]
+          description: Stable application code used for declared operations and framework-level API failures.
+          enum:
+            - INVALID_REQUEST
+            - UNKNOWN_PRODUCT
+            - INTERNAL_ERROR
+            - UNAUTHORIZED
+            - CATALOG_CONFLICT
+            - METHOD_NOT_ALLOWED
+            - NOT_ACCEPTABLE
         errors:
           type: array
           items:

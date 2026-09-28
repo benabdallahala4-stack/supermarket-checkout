@@ -16,7 +16,9 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,6 +79,38 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             path(request)));
   }
 
+  @Override
+  protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
+      HttpRequestMethodNotSupportedException exception,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    return response(
+        problem(
+            HttpStatus.METHOD_NOT_ALLOWED,
+            "Method not allowed",
+            "The request method is not supported for this resource.",
+            CodeEnum.METHOD_NOT_ALLOWED,
+            path(request)),
+        headers);
+  }
+
+  @Override
+  protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(
+      HttpMediaTypeNotAcceptableException exception,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    return response(
+        problem(
+            HttpStatus.NOT_ACCEPTABLE,
+            "Not acceptable",
+            "The requested response media type is not available.",
+            CodeEnum.NOT_ACCEPTABLE,
+            path(request)),
+        headers);
+  }
+
   @ExceptionHandler({InvalidCartException.class, ConstraintViolationException.class})
   ResponseEntity<Object> invalidCart(Exception exception, HttpServletRequest request) {
     return invalidRequest(request.getRequestURI());
@@ -123,9 +157,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   private ResponseEntity<Object> response(ApiProblem problem) {
-    return ResponseEntity.status(problem.getStatus())
-        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
-        .body(problem);
+    return response(problem, new HttpHeaders());
+  }
+
+  private ResponseEntity<Object> response(ApiProblem problem, HttpHeaders headers) {
+    var responseHeaders = new HttpHeaders();
+    responseHeaders.putAll(headers);
+    responseHeaders.setContentType(MediaType.APPLICATION_PROBLEM_JSON);
+
+    return new ResponseEntity<>(
+        problem, responseHeaders, HttpStatusCode.valueOf(problem.getStatus()));
   }
 
   private String path(WebRequest request) {

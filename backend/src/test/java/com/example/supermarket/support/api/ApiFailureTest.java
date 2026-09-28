@@ -63,6 +63,28 @@ class ApiFailureTest {
   }
 
   @Test
+  void returnsContractProblemWhenMethodIsNotAllowed() throws Exception {
+    mvc.perform(delete("/api/products"))
+        .andExpect(status().isMethodNotAllowed())
+        .andExpect(header().string("Allow", "GET"))
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(405))
+        .andExpect(jsonPath("$.instance").value("/api/products"))
+        .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
+  }
+
+  @Test
+  void returnsContractProblemWhenResponseMediaTypeIsNotAcceptable() throws Exception {
+    mvc.perform(get("/api/products").accept(MediaType.APPLICATION_XML))
+        .andExpect(status().isNotAcceptable())
+        .andExpect(header().exists("Accept"))
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(406))
+        .andExpect(jsonPath("$.instance").value("/api/products"))
+        .andExpect(jsonPath("$.code").value("NOT_ACCEPTABLE"));
+  }
+
+  @Test
   void returnsEmptyCatalogEnvelope() throws Exception {
     when(provider.findAll()).thenReturn(new CatalogSnapshot(List.of(), List.of()));
 
