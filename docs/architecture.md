@@ -22,6 +22,8 @@ flowchart LR
 
 The storefront never calculates prices. It sends product IDs and integer quantities, then renders the itemized receipt returned by checkout. This keeps offer rules in one place and avoids disagreement between clients.
 
+Runtime views show the [catalog with active offer badges](images/catalog-offers.png) and the [cart quantity controls](images/cart-quantities.png). The README embeds the verified receipt and catalog-reconciliation states.
+
 ## Backend boundaries
 
 Backend packages are grouped by feature and then by role:

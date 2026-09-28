@@ -13,6 +13,16 @@ A supermarket checkout that applies active quantity offers automatically. The ba
 
 For a focused review, start with the [architecture guide](docs/architecture.md), the [API contract](api/openapi.yaml), and the [scope assumptions](docs/assumptions.md). The decisions behind the boundaries, contract, money representation and catalog storage are recorded in [the ADRs](docs/adr/).
 
+## Application preview
+
+Three apples exercise the brief's quantity offer: subtotal EUR 0.90, savings EUR 0.15 and total EUR 0.75.
+
+![Checkout receipt for three apples showing subtotal EUR 0.90, savings EUR 0.15 and total EUR 0.75](docs/images/checkout-receipt.png)
+
+When checkout observes a newer catalog revision, it discards the stale quote, refreshes products and asks for an explicit recalculation.
+
+![Catalog reconciliation notice after a revision change](docs/images/catalog-reconciliation.png)
+
 ## System design and architecture
 
 The application is a modular monolith with a separately built Angular storefront. The Spring Boot backend owns catalog data and all monetary calculations. PostgreSQL is the default catalog store, while a Spring profile provides a validated YAML fallback for lightweight demonstrations.
