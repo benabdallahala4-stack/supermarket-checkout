@@ -16,7 +16,7 @@ Headings/status targets use tabindex=-1 and do not add extra Tab stops. Their fo
 
 ## Evidence
 
-- Seven focus regression tests cover refresh, retry, removal, decrement-to-zero, clear, ordinary decrement and checkout.
+- Seven executed focus test cases cover refresh, retry, removal, decrement-to-zero, clear, ordinary decrement and checkout: four standalone `it` cases plus the three inputs of one parameterized `it.each` case.
 - Real browser Enter/Space activation and Tab continuation checked. After refresh, Tab reaches Refresh products; after removal, focus remains at Your cart. Checkout updates retain focus on the status.
 - Browser widths 320, 390, 768 and 1366 tested with a 228-character product name and a 40-digit exact-decimal price. No horizontal overflow after fixes.
 - 200% CSS text enlargement at 320px tested separately.

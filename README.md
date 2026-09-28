@@ -93,10 +93,10 @@ Receipts are calculated quotes. They are neither persisted nor treated as price 
 - The backend remains stateless outside PostgreSQL and can be replicated behind a load balancer.
 - Catalog replacement uses a conditional revision update and one database transaction.
 - Requests are bounded to 1,000 entries and 1 MiB of JSON.
-- Public catalog responses currently return the complete bounded catalog in product-ID order.
+- Public catalog responses return the complete bounded catalog in product-ID order; [ADR 007](docs/adr/007-bounded-catalog-delivery.md) records why pagination is deferred and when to revisit it.
 - Search and pagination require coordinated OpenAPI, database-query and frontend changes.
 - Checkout and catalog operations are synchronous, so the current scope has no asynchronous broker requirement.
-- Payments, inventory, orders, scheduled offer activation and user accounts remain separate future capabilities.
+- Payments, inventory, orders and user accounts remain separate future capabilities. [ADR 008](docs/adr/008-explicit-offer-activation.md) records why weekly activation is an explicit restart-free catalog replacement until scheduling rules are defined.
 
 The detailed package structure, generation boundary and verification strategy are documented in [`docs/architecture.md`](docs/architecture.md), while individual trade-offs are recorded in the [ADRs](docs/adr/).
 
@@ -201,7 +201,7 @@ To supply a different catalog, create an external YAML file with the same `check
 java -jar backend/build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=config-catalog --spring.config.additional-location=file:./config/catalog.yml
 ```
 
-Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See [active catalog decision](docs/adr/004-active-catalog-configuration.md) and [scope assumptions](docs/assumptions.md).
+Supply complete lists because Spring replaces lists across configuration sources. Use `offers: []` to clear bundled offers. Changing the file requires a restart; no rebuild is needed. There is no automatic weekly activation or live reload. See the [configuration decision](docs/adr/004-active-catalog-configuration.md), [offer activation decision](docs/adr/008-explicit-offer-activation.md) and [scope assumptions](docs/assumptions.md).
 
 The catalog provider returns immutable views and looks up a set of IDs together. Missing IDs are omitted for checkout to reject, rather than producing partial successful receipts. The checkout service performs one batch lookup per request and rejects unknown products before pricing.
 

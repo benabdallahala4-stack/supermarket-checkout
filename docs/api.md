@@ -17,7 +17,7 @@ The pinned generator emits nested `@Valid` items without element-level `@NotNull
 
 Checkout is stateless. It applies each complete bundle, then charges remaining units at regular price. For three apples priced at `"0.30"` with two for `"0.45"`, subtotal is `"0.90"`, discount is `"0.15"`, and total is `"0.75"`. Request/response examples, including empty checkout and errors, are embedded in the specification.
 
-Errors use `application/problem+json`, including `type`, `title`, `status`, `detail`, `instance`, `code`, and optional field errors. The contract defines 400 for invalid input/unknown products, 415 for unsupported checkout content types, and 500 for safe generic server errors. The exception handler returns these responses explicitly, with field errors sorted by field and message. Unexpected failures are logged internally and return generic details; internal IllegalArgumentException failures are not misclassified as bad client input.
+Errors use `application/problem+json`, including `type`, `title`, `status`, `detail`, `instance`, `code`, and optional field errors. The contract defines 400 for invalid input/unknown products, 415 for unsupported checkout content types, and 500 for safe generic server errors. Shared handling also gives framework-level 405 and 406 failures stable `METHOD_NOT_ALLOWED` and `NOT_ACCEPTABLE` codes while preserving the framework's `Allow` and `Accept` headers. Field errors are included when validation supplies a reliable property path and are sorted by field and message; parsing and semantic catalog failures remain generic. Unexpected failures are logged internally and return generic details; internal IllegalArgumentException failures are not misclassified as bad client input.
 
 ## Reproducible generation
 
@@ -48,11 +48,11 @@ MapStruct implementations are generated under the backend build directory and ar
 
 Backend verification covers configuration, pricing, batch coordination, real generated mapper beans, strict HTTP input, response serialization and safe failures. Tests use the Spring application with MockMvc; only the catalog provider is substituted for empty-catalog and internal-error scenarios. A packaged-JAR HTTP smoke test verifies the catalog and three-apple flow.
 
-Contract validation and generated-client reproducibility also pass locally. The Angular 22 scaffold compiles the generated client under strict TypeScript and tests real generated service URLs/payloads with Angular HTTP testing. Hosted CI awaits publication.
+Contract validation and generated-client reproducibility pass locally and in hosted GitHub Actions. The Angular 22 scaffold compiles the generated client under strict TypeScript and tests real generated service URLs/payloads with Angular HTTP testing. The hosted backend, contract and frontend jobs invoke the same verification entry points documented for local use.
 
 ## Operator API
 
-GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and `X-Catalog-Token` header. GET returns revision/items and a strong `ETag`. PUT accepts an items-only replacement and requires that ETag in `If-Match`; the existing conditional database update remains the optimistic lock. Missing preconditions return 428, malformed validators return 400 and stale validators return 412. See [operator workflow](catalog-management.md) for token handling and examples. Semantic catalog validation failures return 400; unexpected database failures remain generic 500 responses.
+GET and PUT `/api/management/catalog` are generated from the same contract. Both require the optional catalog-management profile and `X-Catalog-Token` header. GET returns revision/items and a strong `ETag`. PUT accepts an items-only replacement and requires that ETag in `If-Match`; the existing conditional database update remains the optimistic lock. Missing preconditions return 428, malformed validators return 400 and stale validators return 412. See [operator workflow](catalog-management.md) for token handling and examples. Generated bean validation reports field paths such as `items[0].name`; semantic catalog validation failures return a generic 400 because they do not always map to one stable request field. Unexpected database failures remain generic 500 responses.
 
 ## Catalog revision and quote reconciliation
 
